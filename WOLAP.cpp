@@ -8,6 +8,8 @@ Author: (c) Hagen Jaeger, Uwe Simmer    April 2016 - March 2017
 
 #include "WOLAP.h"
 
+#define M_PI 3.14159265358979323846
+
 WOLAP::WOLAP(double *vInterleavedIR, uint32_t iLengthIR, uint32_t iNumChansIR,
              uint32_t iBlockLen, uint32_t iNumChansAudio)
 {
@@ -114,7 +116,7 @@ WOLAP::WOLAP(double *vInterleavedIR, uint32_t iLengthIR, uint32_t iNumChansIR,
             for (iSampleCnt=0; iSampleCnt<iProcessLen; iSampleCnt++)
                 vTmpPartIR.at(iSampleCnt) = vTmpIR.at(iChanCnt).at(iPartCnt*iProcessLen+iSampleCnt);
 
-            fft_double(vTmpPartIR.data(), mFilterSpectrum.at(iChanCnt).at(iPartCnt).data(), iNfft);
+            rfft_double(vTmpPartIR.data(), mFilterSpectrum.at(iChanCnt).at(iPartCnt).data(), iNfft);
         }
     }
 }
@@ -135,7 +137,7 @@ void WOLAP::process(double *vInBlockInterleaved)
         for (iSampleCnt=0; iSampleCnt<iProcessLen; iSampleCnt++)
             vInBlockWin[iSampleCnt] = mInBlock[iChanCntAudio][iSampleCnt]*vWin[iSampleCnt];
 
-        fft_double(vInBlockWin.data(), mInSpectrum[iChanCntAudio][iFreqSaveCnt].data(), iNfft);
+        rfft_double(vInBlockWin.data(), mInSpectrum[iChanCntAudio][iFreqSaveCnt].data(), iNfft);
 
         for (iSampleCnt=0; iSampleCnt<iProcessLen+1; iSampleCnt++)
             vInSpectrumSum[iSampleCnt].re = vInSpectrumSum[iSampleCnt].im = 0.0;
@@ -154,7 +156,7 @@ void WOLAP::process(double *vInBlockInterleaved)
                 iFreqReadCnt+=iNumMems;
         }
 
-        ifft_double(vInSpectrumSum.data(), vOutBlock.data(), iNfft);
+        irfft_double(vInSpectrumSum.data(), vOutBlock.data(), iNfft);
 
         for (iSampleCnt=0; iSampleCnt<iProcessLen; iSampleCnt++)
         {

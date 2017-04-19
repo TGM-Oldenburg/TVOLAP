@@ -7,9 +7,10 @@ Author: (c) Hagen Jaeger, Uwe Simmer    April 2016 - March 2017
 #ifndef WOLAP_H
 #define WOLAP_H
 
-#include "complex_float64.h"
 #include "fft.h"
-#include "stdint.h"
+#include "complex_functions.h"
+#include <math.h>
+#include <stdint.h>
 #include <vector>
 
 class WOLAP
