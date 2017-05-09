@@ -17,7 +17,7 @@ Build
 
 Run cmake without errors and build with your favourite compiler. Tested setups:
 
-- Windows7, 8 and 10 with MinGW-w64-i686 (32Bit), MinGW-w64-x86_64 (64Bit)
+- Windows 7, 8 and 10 with MinGW-w64-i686 (32Bit), MinGW-w64-x86_64 (64Bit)
 - Linux Ubuntu 16.04, Debian 8.7 with GCC
 
 on x86-32 (Win32) and x86-64 processor architecture.
