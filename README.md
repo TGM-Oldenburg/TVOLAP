@@ -7,7 +7,7 @@ This project implements a weighted overlap add routine which works in partitions
 
 ``processExample.cpp`` stores a processing example of the convolution process by writing the resulting test signal to a .wav file, so that it can easily be visualized in MATLAB / Audacity a.s.o.). This example is licenced under an LGPL (see ``COPYING.txt`` for a copy of the licence).
 
-``QtExample.cpp`` plus its GUI class ``QtMainwindow.cpp`` / ``QtMainwindow.h`` show a processing example by plotting of the results (via Qt and qcustomplot). This example is licenced under an GPL (see ``COPYING.txt`` for a copy of the licence).
+``QtExample.cpp`` plus its GUI class ``QtMainwindow.cpp`` / ``QtMainwindow.h`` show a processing example by plotting of the results (via Qt and qcustomplot). This example is licenced under an GPL (see ``COPYING.LESSERtxt`` for a copy of the licence).
 
 Please see the example codes to get an idea on how to use the WOLAP class. There is also a MATLAB subfolder which shows how to implement WOLAP there. Tha MATLAB-example is not encapsulated in functions and scripts / objects yet.
 
