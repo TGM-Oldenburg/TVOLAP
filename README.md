@@ -5,7 +5,7 @@ This project implements a weighted overlap add routine which works in partitions
 
 ``WOLAP.cpp`` and ``WOLAP.h`` implement the processing routine as C++ class, with no external dependencies except the stdc++11 library. The WOLAP processing class itself plus the fast fourier transform routine (``fft.cpp`` and ``fft.h``) are licenced under an LGPL (see ``COPYING.LESSER.txt`` for a copy of the licence).
 
-``processExample.cpp`` stores a processing example of the convolution process by writing the resulting test signal to a .wav file, so that it can easily be visualized in MATLAB / Audacity a.s.o.). This example is licenced under an LGPL (see ``COPYING..LESSER.txt`` for a copy of the licence).
+``processExample.cpp`` stores a processing example of the convolution process by writing the resulting test signal to a .wav file, so that it can easily be visualized in MATLAB / Audacity a.s.o.). This example is licenced under an LGPL (see ``COPYING.LESSER.txt`` for a copy of the licence).
 
 ``QtExample.cpp`` plus its GUI class ``QtMainwindow.cpp`` / ``QtMainwindow.h`` show a processing example by plotting of the results (via Qt and qcustomplot). This example is licenced under an GPL (see ``COPYING.txt`` for a copy of the licence).
 
