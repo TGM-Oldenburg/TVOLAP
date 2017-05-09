@@ -18,18 +18,18 @@ class WOLAP
 {
 
 public:
-    WOLAP(std::vector<double> &vInterleavedIR, uint32_t iLengthIR, uint32_t iNumChansIR,
-          uint32_t iBlockLen, uint32_t iNumChansAudio);
+    WOLAP(std::vector<double> &interleavedIR, uint32_t lenIR, uint32_t numChansIR,
+          uint32_t blockLen, uint32_t numChansAudio);
 
-    void process(double *vInBlockInterleaved);
+    void process(double *inBlockInterleaved);
 
 private:
-    uint32_t iBlockLen, iProcessLen, iNfft, iNumChansAudio, iNumChansIR, iNumParts, iNumMems, iOverlapFact, iFreqSaveCnt, iConvSaveCnt;
-    std::vector<double> vWin, vInBlockWin, vOutBlock;
-    std::vector<complex_float64> vInSpectrumSum;
-    std::vector< std::vector<double> > mInBlock, mOutBlock, mOutBlockMem;
-    std::vector< std::vector< std::vector<double> > > mConvMem;
-    std::vector< std::vector< std::vector<complex_float64> > > mInSpectrum, mFilterSpectrum;
+    uint32_t blockLen, processLen, nfft, numChansAudio, numChansIR, numParts, numMems, overlapFact, freqSaveCnt, convSaveCnt;
+    std::vector<double> winVec, inBlockWin, outBlock;
+    std::vector<complex_float64> inSpectrumSum;
+    std::vector< std::vector<double> > inBlock, outBlockMat, outBlockMatMem;
+    std::vector< std::vector< std::vector<double> > > convMem;
+    std::vector< std::vector< std::vector<complex_float64> > > inSpectrum, filterSpectrum;
 };
 
 #endif // WOLAP_H

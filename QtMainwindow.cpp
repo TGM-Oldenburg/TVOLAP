@@ -7,65 +7,69 @@
 \*-----------------------------------------------------------------------------*/
 
 #include "QtMainwindow.h"
-#include<stdint.h>
-#include<vector>
-#include<WOLAP.h>
-#include<cmath>
+#include <stdint.h>
+#include <vector>
+#include <WOLAP.h>
+#include <cmath>
+
+#ifndef M_PI
+#define M_PI    3.14159265358979323846
+#endif
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
     //----------------------------TestSignalGeneration----------------------------------
-    uint32_t iFs = 48000;
-    double fTimeDurAudio = 2.0;
-    double fTimeDurIR = 0.2;
-    double fTmpSum=0.0001, fAlpha, fMin, fMax, fTmp;
-    uint32_t iFreqAudio = 3;
-    uint32_t iFreqIR = 30;
-    uint32_t iNumChansAudio = 2;
-    uint32_t iLenIR = (double) iFs*fTimeDurIR;
-    uint32_t iNumChansIR = 2;
-    uint32_t iNumSampsAudioPerChan = (double) iFs*fTimeDurAudio;
-    uint32_t iNumSampsAudio = iNumSampsAudioPerChan*iNumChansAudio;
-    uint32_t iNumSampsIR = iNumChansIR*iLenIR;
-    uint32_t iBlockLen = 512;
-    uint32_t iNumBlocks = iNumSampsAudioPerChan/iBlockLen;
+    uint32_t sampFreq = 48000;
+    double timeDurAudio = 2.0;
+    double timeDurIR = 0.2;
+    double tmpSum = 0.0001, alpha, minVal, maxVal, tmpVal;
+    uint32_t squareWaveFreq = 3;
+    uint32_t oscillatorFreq = 30;
+    uint32_t numChansAudio = 2;
+    uint32_t lenIR = (double) sampFreq*timeDurIR;
+    uint32_t numChansIR = 2;
+    uint32_t numSampsAudioPerChan = (double) sampFreq*timeDurAudio;
+    uint32_t numSampsAudio = numSampsAudioPerChan*numChansAudio;
+    uint32_t numSampsIR = numChansIR*lenIR;
+    uint32_t blockLen = 512;
+    uint32_t numBlocks = numSampsAudioPerChan/blockLen;
 
-    std::vector<double> vTestAudioIn(iNumSampsAudio, 0.0);
-    std::vector<double> vTestIR(iNumSampsIR, 1.0);
+    std::vector<double> testSignal(numSampsAudio, 0.0);
+    std::vector<double> testIR(numSampsIR, 1.0);
 
     //test input is a square wave with iFreq Hz
-    for (unsigned int i=0; i<iNumSampsAudio; i+=iNumChansAudio)
+    for (unsigned int i=0; i<numSampsAudio; i+=numChansAudio)
     {
-        fTmp = 0.5*(((sin(2.0*M_PI*iFreqAudio*((double)i/iNumChansAudio/iFs)))>0) ? (1):(-1));
-        for (unsigned int k=0; k<iNumChansAudio; k++)
-            vTestAudioIn.at(i+k) = fTmp;
+        tmpVal = 0.5*(((sin(2.0*M_PI*squareWaveFreq*((double)i/numChansAudio/sampFreq)))>0) ? (1):(-1));
+        for (unsigned int k=0; k<numChansAudio; k++)
+            testSignal.at(i+k) = tmpVal;
     }
 
     //test impulse response is a damped oscillator with same frequency as test signal
-    fAlpha = 1.0 - 1.0/(fTimeDurIR*0.1*iFs);
-    for (unsigned int i=iNumChansIR; i<iNumSampsIR; i++)
-        vTestIR.at(i) = fAlpha*vTestIR[i-iNumChansIR];
+    alpha = 1.0 - 1.0/(timeDurIR*0.1*sampFreq);
+    for (unsigned int i=numChansIR; i<numSampsIR; i++)
+        testIR.at(i) = alpha*testIR[i-numChansIR];
 
-    for (unsigned int i=0; i<iNumSampsIR/2; i++) //test input is a delayed delta impulse
-        vTestIR.at(i) = 0.0;
+    for (unsigned int i=0; i<numSampsIR/2; i++) //test input is a delayed delta impulse
+        testIR.at(i) = 0.0;
 
-    for (unsigned int i=iNumSampsIR/2; i<iNumSampsIR; i+=iNumChansIR) //test input is a delayed delta impulse
+    for (unsigned int i=numSampsIR/2; i<numSampsIR; i+=numChansIR) //test input is a delayed delta impulse
     {
-        fTmp = -sin(2.0*M_PI*iFreqIR*((double)(i-iNumSampsIR/2)/iNumChansIR/iFs));
-        for (unsigned int k=0; k<iNumChansIR; k++)
-            vTestIR.at(i+k) *= fTmp;
+        tmpVal = -sin(2.0*M_PI*oscillatorFreq*((double)(i-numSampsIR/2)/numChansIR/sampFreq));
+        for (unsigned int k=0; k<numChansIR; k++)
+            testIR.at(i+k) *= tmpVal;
     }
 
-    for (unsigned int i=0; i<iNumSampsIR; i++)
-        fTmpSum += (vTestIR[i]>0) ? (vTestIR[i]) : (-vTestIR[i]);
+    for (unsigned int i=0; i<numSampsIR; i++)
+        tmpSum += (testIR[i]>0) ? (testIR[i]) : (-testIR[i]);
 
-    for (unsigned int i=0; i<iNumSampsIR; i++)
-        vTestIR[i]/=fTmpSum;
+    for (unsigned int i=0; i<numSampsIR; i++)
+        testIR[i]/=tmpSum;
 
     //---------------------------------WOLAP init----------------------------------------
 
-    WOLAP wolapInst(vTestIR, iLenIR, iNumChansIR, iBlockLen, iNumChansAudio);
+    WOLAP wolapInst(testIR, lenIR, numChansIR, blockLen, numChansAudio);
 
     //--------------------------------Plotting stuff-------------------------------------
 
@@ -78,25 +82,25 @@ MainWindow::MainWindow(QWidget *parent)
     inPlot->addGraph();
     inPlot->graph(0)->setPen(QColor(230,50,50));
     inPlot->graph(0)->setBrush(plotBrush);
-    inPlot->xAxis->setRange(1,iNumBlocks*iBlockLen);
-    fMin = *std::min_element(vTestAudioIn.begin(),vTestAudioIn.end());
-    fMax = *std::max_element(vTestAudioIn.begin(),vTestAudioIn.end());
-    inPlot->yAxis->setRange(1.2*fMin,1.2*fMax);
+    inPlot->xAxis->setRange(1,numBlocks*blockLen);
+    minVal = *std::min_element(testSignal.begin(),testSignal.end());
+    maxVal = *std::max_element(testSignal.begin(),testSignal.end());
+    inPlot->yAxis->setRange(1.2*minVal,1.2*maxVal);
     inPlot->setBackground(this->palette().background().color());
-    xInPlot.resize(iNumSampsAudioPerChan);
-    yInPlot.resize(iNumSampsAudioPerChan);
-    for (unsigned int cnt=0; cnt<iNumBlocks*iBlockLen; cnt++)
+    xInPlot.resize(numSampsAudioPerChan);
+    yInPlot.resize(numSampsAudioPerChan);
+    for (unsigned int cnt=0; cnt<numBlocks*blockLen; cnt++)
     {
         xInPlot[cnt] = cnt;
-        yInPlot[cnt] = vTestAudioIn[cnt*iNumChansAudio+plotChannel];
+        yInPlot[cnt] = testSignal[cnt*numChansAudio+plotChannel];
     }
     inPlot->graph(0)->setData(xInPlot, yInPlot, true);
 
-    for (unsigned int i=0; i<iNumBlocks; i++)
-        wolapInst.process(&vTestAudioIn[i*iNumChansAudio*iBlockLen]);
+    for (unsigned int i=0; i<numBlocks; i++)
+        wolapInst.process(&testSignal[i*numChansAudio*blockLen]);
 
-    for (unsigned int i=iNumBlocks*iBlockLen*iNumChansAudio; i<iNumSampsAudio; i++)
-        vTestAudioIn[i] = 0.0;
+    for (unsigned int i=numBlocks*blockLen*numChansAudio; i<numSampsAudio; i++)
+        testSignal[i] = 0.0;
 
     irPlot = new QCustomPlot(this);
     irPlot->move(400,0);
@@ -104,17 +108,17 @@ MainWindow::MainWindow(QWidget *parent)
     irPlot->addGraph();
     irPlot->graph(0)->setPen(QColor(230,50,50));
     irPlot->graph(0)->setBrush(plotBrush);
-    irPlot->xAxis->setRange(1,iLenIR);
-    fMin = *std::min_element(vTestIR.begin(),vTestIR.end());
-    fMax = *std::max_element(vTestIR.begin(),vTestIR.end());
-    irPlot->yAxis->setRange(1.2*fMin, 1.2*fMax);
+    irPlot->xAxis->setRange(1,lenIR);
+    minVal = *std::min_element(testIR.begin(),testIR.end());
+    maxVal = *std::max_element(testIR.begin(),testIR.end());
+    irPlot->yAxis->setRange(1.2*minVal, 1.2*maxVal);
     irPlot->setBackground(this->palette().background().color());
-    xIrPlot.resize(iLenIR);
-    yIrPlot.resize(iLenIR);
-    for (unsigned int cnt=0; cnt<iLenIR; cnt++)
+    xIrPlot.resize(lenIR);
+    yIrPlot.resize(lenIR);
+    for (unsigned int cnt=0; cnt<lenIR; cnt++)
     {
         xIrPlot[cnt] = cnt;
-        yIrPlot[cnt] = vTestIR[cnt*iNumChansIR+plotChannel];
+        yIrPlot[cnt] = testIR[cnt*numChansIR+plotChannel];
     }
     irPlot->graph(0)->setData(xIrPlot, yIrPlot, true);
 
@@ -124,17 +128,17 @@ MainWindow::MainWindow(QWidget *parent)
     outPlot->addGraph();
     outPlot->graph(0)->setPen(QColor(230,50,50));
     outPlot->graph(0)->setBrush(plotBrush);
-    outPlot->xAxis->setRange(1,iNumBlocks*iBlockLen);
-    fMin = *std::min_element(vTestAudioIn.begin(),vTestAudioIn.end());
-    fMax = *std::max_element(vTestAudioIn.begin(),vTestAudioIn.end());
-    outPlot->yAxis->setRange(1.2*fMin,1.2*fMax);
+    outPlot->xAxis->setRange(1,numBlocks*blockLen);
+    minVal = *std::min_element(testSignal.begin(),testSignal.end());
+    maxVal = *std::max_element(testSignal.begin(),testSignal.end());
+    outPlot->yAxis->setRange(1.2*minVal,1.2*maxVal);
     outPlot->setBackground(this->palette().background().color());
-    xOutPlot.resize(iNumSampsAudioPerChan);
-    yOutPlot.resize(iNumSampsAudioPerChan);
-    for (unsigned int cnt=0; cnt<iNumBlocks*iBlockLen; cnt++)
+    xOutPlot.resize(numSampsAudioPerChan);
+    yOutPlot.resize(numSampsAudioPerChan);
+    for (unsigned int cnt=0; cnt<numBlocks*blockLen; cnt++)
     {
         xOutPlot[cnt] = cnt;
-        yOutPlot[cnt] = vTestAudioIn[cnt*iNumChansAudio+plotChannel];
+        yOutPlot[cnt] = testSignal[cnt*numChansAudio+plotChannel];
     }
     outPlot->graph(0)->setData(xOutPlot, yOutPlot, true);
 }

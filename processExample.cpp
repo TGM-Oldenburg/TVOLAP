@@ -22,66 +22,64 @@
 int main()
 {
     //----------------------------TestSignalGeneration----------------------------------
-    uint32_t iFs = 48000;
-    double fTimeDurAudio = 2.0;
-    double fTimeDurIR = 0.2;
-    double fTmpSum=0.0001, fAlpha, fMin, fMax, fTmp;
-    uint32_t iFreqAudio = 3;
-    uint32_t iFreqIR = 30;
-    uint32_t iNumChansAudio = 2;
-    uint32_t iLenIR = (double) iFs*fTimeDurIR;
-    uint32_t iNumChansIR = 2;
-    uint32_t iNumSampsAudioPerChan = (double) iFs*fTimeDurAudio;
-    uint32_t iNumSampsAudio = iNumSampsAudioPerChan*iNumChansAudio;
-    uint32_t iNumSampsIR = iNumChansIR*iLenIR;
-    uint32_t iBlockLen = 512;
-    uint32_t iNumBlocks = iNumSampsAudioPerChan/iBlockLen;
+    uint32_t sampFreq = 48000;
+    double timeDurAudio = 2.0;
+    double timeDurIR = 0.2;
+    double tmpSum = 0.0001, alpha, tmpMin, tmpMax, tmpVar;
+    uint32_t squareWaveFreq = 3;
+    uint32_t oscillatorFreq = 30;
+    uint32_t numChansAudio = 2;
+    uint32_t lenIR = (double) sampFreq*timeDurIR;
+    uint32_t numChansIR = 2;
+    uint32_t numSampsAudioPerChan = (double) sampFreq*timeDurAudio;
+    uint32_t numSampsAudio = numSampsAudioPerChan*numChansAudio;
+    uint32_t numSampsIR = numChansIR*lenIR;
+    uint32_t blockLen = 512;
+    uint32_t numBlocks = numSampsAudioPerChan/blockLen;
     uint32_t tmp32;
     uint16_t tmp16;
 
-    std::vector<double> vWOLAPIn(iNumSampsAudio, 0.0);
-    std::vector<double> vDirectConvIn(iNumSampsAudio, 0.0);
-    std::vector<double> vTestIR(iNumSampsIR, 1.0);
-    std::vector<double> vDirectConvOut(iNumSampsAudio+iNumSampsIR-1, 0.0);
-    std::vector<int16_t> vTmp16;
+    std::vector<double> inputSignal(numSampsAudio, 0.0);
+    std::vector<double> testIR(numSampsIR, 1.0);
+    std::vector<int16_t> tmp16Sig;
 
     //test input is a square wave with iFreq Hz
-    for (uint32_t i=0; i<iNumSampsAudio; i+=iNumChansAudio)
+    for (uint32_t i=0; i<numSampsAudio; i+=numChansAudio)
     {
-        fTmp = 0.5*(((sin(2.0*M_PI*iFreqAudio*((double)i/iNumChansAudio/iFs)))>0) ? (1):(-1));
-        for (uint32_t k=0; k<iNumChansAudio; k++)
-            vWOLAPIn.at(i+k) = vDirectConvIn.at(i+k) = fTmp;
+        tmpVar = 0.5*(((sin(2.0*M_PI*squareWaveFreq*((double)i/numChansAudio/sampFreq)))>0) ? (1):(-1));
+        for (uint32_t k=0; k<numChansAudio; k++)
+            inputSignal.at(i+k) = tmpVar;
     }
 
     //test impulse response is a damped oscillator with same frequency as test signal
-    fAlpha = 1.0 - 1.0/(fTimeDurIR*0.1*iFs);
-    for (uint32_t i=iNumChansIR; i<iNumSampsIR; i++)
-        vTestIR.at(i) = fAlpha*vTestIR[i-iNumChansIR];
+    alpha = 1.0 - 1.0/(timeDurIR*0.1*sampFreq);
+    for (uint32_t i=numChansIR; i<numSampsIR; i++)
+        testIR.at(i) = alpha*testIR[i-numChansIR];
 
-    for (uint32_t i=0; i<iNumSampsIR/2; i++) //test input is a delayed delta impulse
-        vTestIR.at(i) = 0.0;
+    for (uint32_t i=0; i<numSampsIR/2; i++) //test input is a delayed delta impulse
+        testIR.at(i) = 0.0;
 
-    for (uint32_t i=iNumSampsIR/2; i<iNumSampsIR; i+=iNumChansIR) //test input is a delayed delta impulse
+    for (uint32_t i=numSampsIR/2; i<numSampsIR; i+=numChansIR) //test input is a delayed delta impulse
     {
-        fTmp = -sin(2.0*M_PI*iFreqIR*((double)(i-iNumSampsIR/2)/iNumChansIR/iFs));
-        for (uint32_t k=0; k<iNumChansIR; k++)
-            vTestIR.at(i+k) *= fTmp;
+        tmpVar = -sin(2.0*M_PI*oscillatorFreq*((double)(i-numSampsIR/2)/numChansIR/sampFreq));
+        for (uint32_t k=0; k<numChansIR; k++)
+            testIR.at(i+k) *= tmpVar;
     }
 
-    for (uint32_t i=0; i<iNumSampsIR; i++)
-        fTmpSum += (vTestIR[i]>0) ? (vTestIR[i]) : (-vTestIR[i]);
+    for (uint32_t i=0; i<numSampsIR; i++)
+        tmpSum += (testIR[i]>0) ? (testIR[i]) : (-testIR[i]);
 
-    for (uint32_t i=0; i<iNumSampsIR; i++)
-        vTestIR[i]/=fTmpSum;
+    for (uint32_t i=0; i<numSampsIR; i++)
+        testIR[i]/=tmpSum;
 
     //---------------------------------WOLAP init----------------------------------------
 
-    WOLAP wolapInst(vTestIR, iLenIR, iNumChansIR, iBlockLen, iNumChansAudio);
+    WOLAP inputSignalst(testIR, lenIR, numChansIR, blockLen, numChansAudio);
 
     //-------------------------WOLAP Response calculation--------------------------------
 
-    for (uint32_t i=0; i<iNumBlocks; i++)
-        wolapInst.process(&vWOLAPIn[i*iNumChansAudio*iBlockLen]);
+    for (uint32_t i=0; i<numBlocks; i++)
+        inputSignalst.process(&inputSignal[i*numChansAudio*blockLen]);
 
     //------------------------------WAV file writing-------------------------------------
 
@@ -90,7 +88,7 @@ int main()
     if (outFile.is_open())
     {
         outFile.write("RIFF", 4);
-        tmp32 = vWOLAPIn.size()*sizeof(int16_t)+36;
+        tmp32 = inputSignal.size()*sizeof(int16_t)+36;
         outFile.write((char*) &tmp32, 4);
         outFile.write("WAVE", 4);
 
@@ -99,24 +97,24 @@ int main()
         outFile.write((char*) &tmp32, 4);
         tmp16 = 1;
         outFile.write((char*) &tmp16, 2);
-        tmp16 = iNumChansAudio;
+        tmp16 = numChansAudio;
         outFile.write((char*) &tmp16, 2);
-        outFile.write((char*) &iFs, 4);
-        tmp32 = iFs*sizeof(int16_t)*iNumChansAudio;
+        outFile.write((char*) &sampFreq, 4);
+        tmp32 = sampFreq*sizeof(int16_t)*numChansAudio;
         outFile.write((char*) &tmp32, 4); //bytes per second
-        tmp32 = sizeof(int16_t)*iNumChansAudio;
+        tmp32 = sizeof(int16_t)*numChansAudio;
         outFile.write((char*) &tmp32, 2);
         tmp32 = 16;
         outFile.write((char*) &tmp32, 2);
         outFile.write("data", 4);
-        tmp32 = vWOLAPIn.size()*sizeof(int16_t)-44;
+        tmp32 = inputSignal.size()*sizeof(int16_t)-44;
         outFile.write((char*) &tmp32, 4);
 
-        vTmp16.resize(vWOLAPIn.size());
-        for (uint32_t i=0; i< vWOLAPIn.size(); i++)
-            vTmp16[i] = vWOLAPIn[i]*0x7FFF;
+        tmp16Sig.resize(inputSignal.size());
+        for (uint32_t i=0; i< inputSignal.size(); i++)
+            tmp16Sig[i] = inputSignal[i]*0x7FFF;
 
-        outFile.write((char*) vTmp16.data(), vTmp16.size()*sizeof(int16_t)-iNumChansAudio*iBlockLen);
+        outFile.write((char*) tmp16Sig.data(), tmp16Sig.size()*sizeof(int16_t)-numChansAudio*blockLen);
 
         outFile.close();
 
