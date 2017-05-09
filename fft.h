@@ -1,34 +1,12 @@
+/*----------------------------------------------------------------------------*\
+| Header of fft.cpp, for explanation and exampple, see cpp-file.               |
+|                                                                              |
+| Author: (c) Uwe Simmer                                  June 1988 - Nov 2012 |
+| LGPL Release: May 2017, License see end of file                              |
+\*----------------------------------------------------------------------------*/
+
 #ifndef _FFT
 #define _FFT
-
-/*
-In-place radix-2 decimation-in-time FFT
-
-Example:
-
-#include "fft.h"
-#define NFFT 16384
-#define MAX_FFT 65536
-
-    // declarations
-    complex_float32 spectrum[NFFT/2+1];
-    complex_float32 transfer[NFFT/2+1];
-    float input[NFFT];
-    float output[NFFT];
-
-    // initialization (once)
-    set_twiddle_table(MAX_FFT);
-
-    // real fft computation (for each block)
-    rfft(input, spectrum, NFFT);
-
-    // spectral modification (for each block)
-    for (i=0; i<NFFT/2+1; i++)
-        spectrum[i] = complex_mul(spectrum[i], transfer[i]);
-
-    // inverse real fft computation (for each block) 
-    irfft(spectrum, output, NFFT);
-*/
 
 #include "complex_float32.h"
 #include "complex_float64.h"
@@ -58,3 +36,20 @@ complex_float64 *table_get_twiddle_factor();
 double *table_get_cos_half();
 
 #endif
+
+/*------------------------------License---------------------------------------*\
+| Copyright (c) 1988-2012 Uwe Simmer                                           |
+|                                                                              |
+| This program is free software: you can redistribute it and/or modify         |
+| it under the terms of the GNU Lesser General Public License as published by  |
+| the Free Software Foundation, either version 3 of the License, or            |
+| (at your option) any later version.                                          |
+|                                                                              |
+| This program is distributed in the hope that it will be useful,              |
+| but WITHOUT ANY WARRANTY; without even the implied warranty of               |
+| MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                |
+| GNU Lesser General Public License for more details.                          |
+|                                                                              |
+| You should have received a copy of the GNU Lesser General Public License     |
+| along with this program. If not, see <http://www.gnu.org/licenses/>.         |
+\*----------------------------------------------------------------------------*/
