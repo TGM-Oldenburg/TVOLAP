@@ -1,7 +1,7 @@
 [W]eighted [O]ver[L]ap [A]dd in [P]artitions 
 ==============================
 
-This project implements a weighted overlap add routine which works in partitions and therefore is both efficient and suitable for time-variant filtering processes. `
+This project implements a weighted overlap add routine which works in partitions and therefore is both efficient and suitable for time-variant filtering processes.
 
 ``WOLAP.cpp`` and ``WOLAP.h`` implement the processing routine as C++ class, with no external dependencies except the stdc++11 library. The WOLAP processing class itself plus the fast fourier transform routine (``fft.cpp`` and ``fft.h``) are licenced under an LGPL (see ``COPYING.LESSER.txt`` for a copy of the licence).
 
