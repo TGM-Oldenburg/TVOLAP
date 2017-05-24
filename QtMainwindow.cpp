@@ -6,11 +6,11 @@
 | GPL Release: May 2017, License see end of file                                |
 \*-----------------------------------------------------------------------------*/
 
-#include "QtMainwindow.h"
 #include <stdint.h>
 #include <vector>
-#include <WOLAP.h>
 #include <cmath>
+#include "QtMainwindow.h"
+#include "WOLAP.h"
 
 #ifndef M_PI
 #define M_PI    3.14159265358979323846
@@ -21,55 +21,83 @@ MainWindow::MainWindow(QWidget *parent)
 {
     //----------------------------TestSignalGeneration----------------------------------
     uint32_t sampFreq = 48000;
-    double timeDurAudio = 2.0;
-    double timeDurIR = 0.2;
+    double timeDurAudio = 3.0;
+    double timeDurIR = 0.25;
     double tmpSum = 0.0001, alpha, minVal, maxVal, tmpVal;
     uint32_t squareWaveFreq = 3;
-    uint32_t oscillatorFreq = 30;
-    uint32_t numChansAudio = 2;
-    uint32_t lenIR = (double) sampFreq*timeDurIR;
-    uint32_t numChansIR = 2;
+    uint32_t oscillatorFreq = 10;
+    uint32_t freqIncrement = 10;
+    uint32_t numChansAudio = 3;
+    uint32_t numSampsIRPerChan = (double) sampFreq*timeDurIR;
+    uint32_t numIR = 4;
+    uint32_t numChansIR = 3;
     uint32_t numSampsAudioPerChan = (double) sampFreq*timeDurAudio;
-    uint32_t numSampsAudio = numSampsAudioPerChan*numChansAudio;
-    uint32_t numSampsIR = numChansIR*lenIR;
     uint32_t blockLen = 512;
     uint32_t numBlocks = numSampsAudioPerChan/blockLen;
+    uint32_t numBlocksPerIR = numBlocks/numIR;
 
-    std::vector<double> testSignal(numSampsAudio, 0.0);
-    std::vector<double> testIR(numSampsIR, 1.0);
+    std::vector<double> testSignal(numChansAudio*numSampsAudioPerChan, 0.0);
+    std::vector< std::vector< std::vector<double> > > testIR;
+    std::vector<double> interleavedIR(numIR*numSampsIRPerChan*numChansIR, 0.0);
+
+    testIR.resize(numIR);
+    for (unsigned int i = 0; i < numIR; i++)
+    {
+    	testIR.at(i).resize(numChansIR);
+    	for (unsigned int j = 0; j < numChansIR; j++)
+    		testIR.at(i).at(j).resize(numSampsIRPerChan, 0.0);
+    }
 
     //test input is a square wave with iFreq Hz
-    for (unsigned int i=0; i<numSampsAudio; i+=numChansAudio)
+    for (unsigned int i=0; i<numSampsAudioPerChan*numChansAudio; i+=numChansAudio)
     {
-        tmpVal = 0.5*(((sin(2.0*M_PI*squareWaveFreq*((double)i/numChansAudio/sampFreq)))>0) ? (1):(-1));
-        for (unsigned int k=0; k<numChansAudio; k++)
-            testSignal.at(i+k) = tmpVal;
+        tmpVal = 0.7071*(((sin(2.0*M_PI*squareWaveFreq*((double)i/numChansAudio/sampFreq)))>0) ? (1):(-1));
+        for (unsigned int j=0; j<numChansAudio; j++)
+            testSignal.at(i+j) = tmpVal;
     }
 
     //test impulse response is a damped oscillator with same frequency as test signal
-    alpha = 1.0 - 1.0/(timeDurIR*0.1*sampFreq);
-    for (unsigned int i=numChansIR; i<numSampsIR; i++)
-        testIR.at(i) = alpha*testIR[i-numChansIR];
-
-    for (unsigned int i=0; i<numSampsIR/2; i++) //test input is a delayed delta impulse
-        testIR.at(i) = 0.0;
-
-    for (unsigned int i=numSampsIR/2; i<numSampsIR; i+=numChansIR) //test input is a delayed delta impulse
+    for (unsigned int i=0; i<numIR; i++)
     {
-        tmpVal = -sin(2.0*M_PI*oscillatorFreq*((double)(i-numSampsIR/2)/numChansIR/sampFreq));
-        for (unsigned int k=0; k<numChansIR; k++)
-            testIR.at(i+k) *= tmpVal;
+		for (unsigned int j=0; j<numChansIR; j++)
+			testIR.at(i).at(j).at(numSampsIRPerChan/2) = 1.0;
+
+		alpha = 1.0 - 1.0/(timeDurIR*0.1*sampFreq);
+		for (unsigned int k=numSampsIRPerChan/2+1; k<numSampsIRPerChan; k++)
+		{
+			for (unsigned int j=0; j<numChansIR; j++)
+				testIR.at(i).at(j).at(k) = alpha*testIR.at(i).at(j).at(k-1);
+		}
+		for (unsigned int k=numSampsIRPerChan/2; k<numSampsIRPerChan; k++)
+		{
+			tmpVal = -sin(2.0*M_PI*oscillatorFreq*((double)(k-numSampsIRPerChan/2)/sampFreq));
+			for (unsigned int j=0; j<numChansIR; j++)
+				testIR.at(i).at(j).at(k) *= tmpVal;
+		}
+		oscillatorFreq += freqIncrement;
     }
 
-    for (unsigned int i=0; i<numSampsIR; i++)
-        tmpSum += (testIR[i]>0) ? (testIR[i]) : (-testIR[i]);
-
-    for (unsigned int i=0; i<numSampsIR; i++)
-        testIR[i]/=tmpSum;
+    for (unsigned int i=0; i<numIR; i++)
+    {
+    	for (unsigned int j=0; j<numChansIR; j++)
+    	{
+			tmpSum = 0.0;
+			for (unsigned int k=0; k<numSampsIRPerChan; k++)
+			{
+				tmpVal = testIR.at(i).at(j).at(k);
+				tmpSum += (tmpVal>0) ? (tmpVal) : (-tmpVal);
+			}
+			for (unsigned int k=0; k<numSampsIRPerChan; k++)
+			{
+				testIR.at(i).at(j).at(k)/= tmpSum;
+				interleavedIR.at(k+(i*numChansIR+j)*numSampsIRPerChan) = testIR.at(i).at(j).at(k);
+			}
+    	}
+    }
 
     //---------------------------------WOLAP init----------------------------------------
 
-    WOLAP wolapInst(testIR, lenIR, numChansIR, blockLen, numChansAudio);
+    WOLAP wolapInst(interleavedIR, numIR, numSampsIRPerChan, numChansIR, blockLen, numChansAudio);
 
     //--------------------------------Plotting stuff-------------------------------------
 
@@ -96,10 +124,18 @@ MainWindow::MainWindow(QWidget *parent)
     }
     inPlot->graph(0)->setData(xInPlot, yInPlot, true);
 
-    for (unsigned int i=0; i<numBlocks; i++)
-        wolapInst.process(&testSignal[i*numChansAudio*blockLen]);
+    for (unsigned int i=0, j=0, k=0; i<numBlocks; i++, j++)
+    {
+    	if (j>=numBlocksPerIR)
+    	{
+    		j = 0;
+    		wolapInst.setIR(++k);
+    	}
 
-    for (unsigned int i=numBlocks*blockLen*numChansAudio; i<numSampsAudio; i++)
+        wolapInst.process(&testSignal[i*numChansAudio*blockLen]);
+    }
+
+    for (unsigned int i=numBlocks*blockLen*numChansAudio; i<numSampsAudioPerChan*numChansAudio; i++)
         testSignal[i] = 0.0;
 
     irPlot = new QCustomPlot(this);
@@ -108,17 +144,17 @@ MainWindow::MainWindow(QWidget *parent)
     irPlot->addGraph();
     irPlot->graph(0)->setPen(QColor(230,50,50));
     irPlot->graph(0)->setBrush(plotBrush);
-    irPlot->xAxis->setRange(1,lenIR);
-    minVal = *std::min_element(testIR.begin(),testIR.end());
-    maxVal = *std::max_element(testIR.begin(),testIR.end());
+    irPlot->xAxis->setRange(1,numSampsIRPerChan*numChansIR*numIR);
+    minVal = *std::min_element(interleavedIR.begin(),interleavedIR.end());
+    maxVal = *std::max_element(interleavedIR.begin(),interleavedIR.end());
     irPlot->yAxis->setRange(1.2*minVal, 1.2*maxVal);
     irPlot->setBackground(this->palette().background().color());
-    xIrPlot.resize(lenIR);
-    yIrPlot.resize(lenIR);
-    for (unsigned int cnt=0; cnt<lenIR; cnt++)
+    xIrPlot.resize(numSampsIRPerChan*numChansIR*numIR);
+    yIrPlot.resize(numSampsIRPerChan*numChansIR*numIR);
+    for (unsigned int cnt=0; cnt<numSampsIRPerChan*numChansIR*numIR; cnt++)
     {
         xIrPlot[cnt] = cnt;
-        yIrPlot[cnt] = testIR[cnt*numChansIR+plotChannel];
+        yIrPlot[cnt] = interleavedIR[cnt];
     }
     irPlot->graph(0)->setData(xIrPlot, yIrPlot, true);
 

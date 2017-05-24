@@ -7,28 +7,35 @@
 | LGPL Release: May 2017, License see end of file                               |
 \*-----------------------------------------------------------------------------*/
 
+#include <stdexcept>
 #include "WOLAP.h"
 
 #define M_PI 3.14159265358979323846
 
-WOLAP::WOLAP(std::vector<double> &interleavedIR, uint32_t lenIR, uint32_t numChansIR,
+WOLAP::WOLAP(std::vector<double> &interleavedIR, uint32_t numIR, uint32_t lenIR, uint32_t numChansIR,
              uint32_t blockLen, uint32_t numChansAudio)
 {
-    std::vector< std::vector<double> > tmpIR;
+    std::vector< std::vector< std::vector<double> > > tmpIR;
     std::vector<double> tmpPartIR;
-    uint32_t intLengthIR, chanCnt=0, convCnt=0, partCnt=0, memCnt=0, sampleCnt=0, cntIR=0;
+    uint32_t intLenIR, irCnt = 0, chanCnt=0, convCnt=0, partCnt=0, memCnt=0, sampleCnt=0, cntIR=0;
+
+    if (interleavedIR.size() != numIR*lenIR*numChansIR)
+    	throw std::runtime_error("Size of interleaved impulse response is wrong."
+    			"Must match number of IRs * length of one IR * number of IR channels.");
 
     this->blockLen = blockLen;
     this->numChansAudio = numChansAudio;
     this->numChansIR = numChansIR;
+    this->numIR = numIR;
     this->processLen = 2*blockLen;
     this->nfft = 2*processLen;
-    intLengthIR = (((lenIR-1)/processLen)*processLen)+processLen;
-    this->numParts = intLengthIR/processLen;
+    intLenIR = (((lenIR-1)/processLen+1)*processLen);
+    this->numParts = intLenIR/processLen;
     this->overlapFact = 2;
     this->numMems = numParts*overlapFact;
     this->freqSaveCnt = 0;
     this->convSaveCnt = 0;
+    this->actIR = 0;
 
     winVec.resize(processLen);
     for (sampleCnt=0; sampleCnt<processLen; sampleCnt++)
@@ -44,17 +51,20 @@ WOLAP::WOLAP(std::vector<double> &interleavedIR, uint32_t lenIR, uint32_t numCha
 
     inSpectrumSum.resize(processLen+1);
 
-    tmpIR.resize(numChansIR);
-    for (chanCnt=0; chanCnt<numChansIR; chanCnt++)
-    {
-        tmpIR.at(chanCnt).resize(intLengthIR);
+    tmpIR.resize(numIR);
+	for (irCnt=0; irCnt<numIR; irCnt++)
+	{
+		tmpIR.at(irCnt).resize(numChansIR);
+		for (chanCnt=0; chanCnt<numChansIR; chanCnt++)
+		{
+			tmpIR.at(irCnt).at(chanCnt).resize(intLenIR);
+			for (sampleCnt=0, cntIR=(irCnt*numChansIR+chanCnt)*lenIR; sampleCnt<lenIR; sampleCnt++, cntIR++)
+				tmpIR.at(irCnt).at(chanCnt).at(sampleCnt) = interleavedIR.at(cntIR);
 
-        for (sampleCnt=0, cntIR=0; sampleCnt<lenIR; sampleCnt++, cntIR+=numChansIR)
-            tmpIR.at(chanCnt).at(sampleCnt) = interleavedIR.at(cntIR);
-
-        for (sampleCnt=lenIR; sampleCnt<intLengthIR; sampleCnt++)
-            tmpIR.at(chanCnt).at(sampleCnt) = 0.0;
-    }
+			for (sampleCnt=lenIR; sampleCnt<intLenIR; sampleCnt++)
+				tmpIR.at(irCnt).at(chanCnt).at(sampleCnt) = 0.0;
+		}
+	}
 
     tmpPartIR.resize(nfft);
     for (sampleCnt=0; sampleCnt<nfft; sampleCnt++)
@@ -106,20 +116,24 @@ WOLAP::WOLAP(std::vector<double> &interleavedIR, uint32_t lenIR, uint32_t numCha
         }
     }
 
-    filterSpectrum.resize(numChansIR);
-    for (chanCnt=0; chanCnt<numChansIR; chanCnt++)
-        {
-        filterSpectrum.at(chanCnt).resize(numParts);
-        for (partCnt=0; partCnt<numParts; partCnt++)
-        {
-            filterSpectrum.at(chanCnt).at(partCnt).resize(processLen+1);
+    filterSpectrum.resize(numIR);
+	for (irCnt=0; irCnt<numIR; irCnt++)
+	{
+		filterSpectrum.at(irCnt).resize(numChansIR);
+		for (chanCnt=0; chanCnt<numChansIR; chanCnt++)
+		{
+			filterSpectrum.at(irCnt).at(chanCnt).resize(numParts);
+			for (partCnt=0; partCnt<numParts; partCnt++)
+			{
+				filterSpectrum.at(irCnt).at(chanCnt).at(partCnt).resize(processLen+1);
 
-            for (sampleCnt=0; sampleCnt<processLen; sampleCnt++)
-                tmpPartIR.at(sampleCnt) = tmpIR.at(chanCnt).at(partCnt*processLen+sampleCnt);
+				for (sampleCnt=0; sampleCnt<processLen; sampleCnt++)
+					tmpPartIR.at(sampleCnt) = tmpIR.at(irCnt).at(chanCnt).at(partCnt*processLen+sampleCnt);
 
-            rfft_double(tmpPartIR.data(), filterSpectrum.at(chanCnt).at(partCnt).data(), nfft);
-        }
-    }
+				rfft_double(tmpPartIR.data(), filterSpectrum.at(irCnt).at(chanCnt).at(partCnt).data(), nfft);
+			}
+		}
+	}
 }
 
 void WOLAP::process(double *inBlockInterleaved)
@@ -149,7 +163,7 @@ void WOLAP::process(double *inBlockInterleaved)
             for (sampleCnt=0; sampleCnt<processLen+1; sampleCnt++)
             {
                 inSpectrumSum[sampleCnt] = complex_add(inSpectrumSum[sampleCnt],
-                        complex_mul(inSpectrum[chanCntAudio][freqReadCnt][sampleCnt], filterSpectrum[chanCntAudio][partCnt][sampleCnt]));
+                        complex_mul(inSpectrum[chanCntAudio][freqReadCnt][sampleCnt], filterSpectrum[actIR][chanCntAudio][partCnt][sampleCnt]));
             }
 
             freqReadCnt-=overlapFact;

@@ -8,28 +8,37 @@
 #ifndef WOLAP_H
 #define WOLAP_H
 
-#include "fft.h"
-#include "complex_functions.h"
-#include <math.h>
 #include <stdint.h>
 #include <vector>
+#include "fft.h"
+#include "complex_functions.h"
 
 class WOLAP
 {
 
 public:
-    WOLAP(std::vector<double> &interleavedIR, uint32_t lenIR, uint32_t numChansIR,
+    WOLAP(std::vector<double> &interleavedIR, uint32_t numIR, uint32_t lenIR, uint32_t numChansIR,
           uint32_t blockLen, uint32_t numChansAudio);
 
     void process(double *inBlockInterleaved);
 
+    inline int setIR(uint32_t actIR)
+    {
+    	if (actIR >= numIR)
+			return -1;
+    	else
+    		this->actIR = actIR;
+    	return 0;
+    }
+
 private:
-    uint32_t blockLen, processLen, nfft, numChansAudio, numChansIR, numParts, numMems, overlapFact, freqSaveCnt, convSaveCnt;
+    uint32_t blockLen, processLen, nfft, numIR, actIR, numChansAudio, numChansIR, numParts, numMems, overlapFact, freqSaveCnt, convSaveCnt;
     std::vector<double> winVec, inBlockWin, outBlock;
     std::vector<complex_float64> inSpectrumSum;
     std::vector< std::vector<double> > inBlock, outBlockMat, outBlockMatMem;
     std::vector< std::vector< std::vector<double> > > convMem;
-    std::vector< std::vector< std::vector<complex_float64> > > inSpectrum, filterSpectrum;
+    std::vector< std::vector< std::vector<complex_float64> > > inSpectrum;
+    std::vector< std::vector< std::vector< std::vector<complex_float64> > > > filterSpectrum;
 };
 
 #endif // WOLAP_H
