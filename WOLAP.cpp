@@ -1,5 +1,5 @@
 /*-----------------------------------------------------------------------------*\
-| Real time head related transfer function processing with special time-variant |
+| Real time transfer function processing with special time-variant 				|
 | implementation of the partitioned convolution in frequency domain (to prevent |
 | from perceptive noticeable audio artifacts).                                  |
 |                                                                               |
