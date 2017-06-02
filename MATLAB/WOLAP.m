@@ -95,7 +95,7 @@ classdef WOLAP < handle
                 if freqReadCnt<1, freqReadCnt = freqReadCnt+obj.numFreqMems; end
             end
 
-            tmpVec = ifft([freqSum ; flipud(conj(freqSum(2:end-1,:)))], obj.nfft, 'symmetric');
+            tmpVec = real(ifft([freqSum ; flipud(conj(freqSum(2:end-1,:)))], obj.nfft));
             outDataProcess = tmpVec(1:obj.processLen,:)+obj.convMem(:,:,obj.modCnt);
             obj.convMem(:,:,obj.modCnt) = tmpVec(obj.processLen+1:end,:);
 

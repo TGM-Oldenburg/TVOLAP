@@ -94,6 +94,9 @@ plot(ax3, 1/fs:1/fs:numSampsAudio/fs, outDataComp, 'linewidth', 2, 'color', [0.1
 grid on; axis([0, timeDurAudio-0.1, min(outDataComp)*1.2, max(outDataComp)*1.2]);
 title('Output signal y(t) via direct conv.'); ylabel('\hspace{3cm} Amplitude A [NV]');
 
+disp(min(outData)*1.2)
+disp(max(outData)*1.2)
+
 ax4 = axes('parent', hFig, 'units', 'centimeters', 'position', [1.3, 1.2, 18.4, 2]);
 plot(ax4, 1/fs:1/fs:numSampsAudio/fs, outData, 'linewidth', 2, 'color', [0.1, 0.1, 0.1]);
 grid on; axis([0, timeDurAudio-0.1, min(outData)*1.2, max(outData)*1.2]);
@@ -101,9 +104,9 @@ title('Input signal x(t)');
 title('Output signal y(t) via conv. engine');
 xlabel('Time t [s]');
 
-set(hFig, 'PaperPosition', [0, 0, dims(3:4)]); 
-set(hFig, 'PaperSize', dims(3:4))
-print(hFig,'-dpdf','-r600','testWOLAP.pdf');
+%set(hFig, 'PaperPosition', [0, 0, dims(3:4)]); 
+%set(hFig, 'PaperSize', dims(3:4))
+%print(hFig,'-dpdf','-r600','testWOLAP.pdf');
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2011-2016> Hagen Jaeger
