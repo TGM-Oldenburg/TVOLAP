@@ -4,19 +4,20 @@
 Reference: Jaeger, Bitzer, Simmer, Blau: "Echtzeitfähiges binaurales Rendering mit Bewegungssensoren von 3D-Brillen", Tagungsband DAGA 2017 - 43. Jahrestagung für Akustik, 6.-9. März 2017, Kiel, ISBN 978-3-939296-12-6
 
 
-This project implements a weighted overlap add routine which works in partitions and therefore is both efficient and suitable for time-variant filtering processes.
+This project implements a weighted overlap add routine which works in partitions. Therefore, WOLAP has low overall latency and is both efficient and suitable for time-variant filtering processes.
 
 
-``WOLAP.cpp`` and ``WOLAP.h`` implement the processing routine as C++ class, with no external dependencies except the stdc++11 library. The WOLAP processing class itself plus the fast fourier transform routine (``fft.cpp`` and ``fft.h``) are licensed under a LGPLv3 (see ``COPYING.LESSER.txt`` for a copy of the license).
+``WOLAP.cpp`` and ``WOLAP.h`` implement the processing routine as C++ class, with no external dependencies except the stdc++11 library. The WOLAP processing class itself is licensed under the LGPLv3 (see ``COPYING.LESSER.txt`` for a copy of the license). The fast fourier transform routine (``fft.cpp`` and ``fft.h``) is available under the MIT License (see end of file for the copyrights and a copy of the license).
+
+``WOLAP.m`` and ``testWOLAP.h`` in the MATLAB_Octave subfolder implement the processing routine as MATLAB class, the implementation is also compatible with Octave (Tested with MATLAB r2016a and Octave 4.0.0). This implementation is available under the MIT license.
+
+``processExample.cpp`` stores a processing example of the convolution process by writing the resulting test signal to a .wav file, so that it can be easily loaded into MATLAB / Audacity a.s.o. for visualization purposes. This example is licensed under the LGPLv3 (see ``COPYING.LESSER.txt`` for a copy of the license).
 
 
-``processExample.cpp`` stores a processing example of the convolution process by writing the resulting test signal to a .wav file, so that it can be easily visualized in MATLAB / Audacity a.s.o.. This example is licensed under a LGPLv3 (see ``COPYING.LESSER.txt`` for a copy of the license).
+``QtExample.cpp`` with its GUI class ``QtMainwindow.cpp`` / ``QtMainwindow.h`` directly visualizes a processing example by plotting the results via Qt and qcustomplot. This example is licensed under the GPLv3 (see ``COPYING.txt`` for a copy of the license).
 
 
-``QtExample.cpp`` with its GUI class ``QtMainwindow.cpp`` / ``QtMainwindow.h`` visualizes a processing example by plotting the results via Qt and qcustomplot. This example is licensed under a GPLv3 (see ``COPYING.txt`` for a copy of the license).
-
-
-Please see the example codes to get an idea on how to use the WOLAP class. There is also a MATLAB subfolder which shows how to implement WOLAP there. The MATLAB-example is not encapsulated in functions and scripts / objects yet.
+Please have a look at the example codes to get an idea on how to use the WOLAP class. Project configuring is done via CMake, there is a confiogure variable ``BUILD_QT_EXAMPLE`` which toggles the examples that will be build. Set it via the cmake GUI or command line option (-DBUILD_QT_EXQTAMPLE = ON / OFF) while configuring.
 
 
 Build
