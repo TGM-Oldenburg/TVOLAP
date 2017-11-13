@@ -6,3 +6,4 @@
 *.mp3
 *.aiff
 *.flac
+__pycache__

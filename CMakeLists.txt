@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-project(WOLAP)
+project(TVOLAP)
 
 option(BUILD_QT_EXAMPLE "Toggle to build the qt vizualisation example." OFF)
 
@@ -62,11 +62,11 @@ endif (BUILD_QT_EXAMPLE)
 
 #Set list of source files
 
-set(WOLAP_SOURCES
+set(TVOLAP_SOURCES
     fft.cpp
     fft.h
-    WOLAP.cpp
-    WOLAP.h
+    TVOLAP.cpp
+    TVOLAP.h
     )
 
 set(QT_EXAMPLE_SOURCES
@@ -82,18 +82,18 @@ set(EXAMPLE_SOURCES
     )
 
 #Add the executable
-add_library(WOLAP SHARED ${WOLAP_SOURCES})
+add_library(TVOLAP SHARED ${TVOLAP_SOURCES})
 
-add_executable(WOLAP_Example ${EXAMPLE_SOURCES})
+add_executable(TVOLAP_Example ${EXAMPLE_SOURCES})
 
 #Link system independent required libraries against the VARy executable
-target_link_libraries(WOLAP_Example WOLAP)
+target_link_libraries(TVOLAP_Example TVOLAP)
 
 if (BUILD_QT_EXAMPLE)
-    add_executable(WOLAP_QtExample ${QT_EXAMPLE_SOURCES})
+    add_executable(TVOLAP_QtExample ${QT_EXAMPLE_SOURCES})
 
     #Link system independent required libraries against the QtExample executable
-    target_link_libraries(WOLAP_QtExample WOLAP ${Qt5Core_LIBRARIES} ${Qt5Gui_LIBRARIES} ${Qt5Widgets_LIBRARIES} ${Qt5PrintSupport_LIBRARIES})
+    target_link_libraries(TVOLAP_QtExample TVOLAP ${Qt5Core_LIBRARIES} ${Qt5Gui_LIBRARIES} ${Qt5Widgets_LIBRARIES} ${Qt5PrintSupport_LIBRARIES})
 endif (BUILD_QT_EXAMPLE)
 
 #Copy all related dynamic libraries to the binary folder if we are on windows (so we can start the .exe without external includes)
@@ -116,5 +116,5 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     endif (BUILD_QT_EXAMPLE)
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
-#Copy the WOLAP-header so that it lays next to the dynamic library in the binary folder.
-file(COPY "WOLAP.h" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+#Copy the TVOLAP-header so that it lays next to the dynamic library in the binary folder.
+file(COPY "TVOLAP.h" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

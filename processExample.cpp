@@ -1,5 +1,5 @@
 /*-----------------------------------------------------------------------------*\
-| Example code for the WOLAP processing routine. Generates a test signal        |
+| Example code for the TVOLAP processing routine. Generates a test signal        |
 | (square wave) and convolutes it with an delayed, damped oscillator. The       |
 | result is stored as .wav file, so you can have easily have a look on it using |
 | any waveform plotting tool (MATLAB, Audacity, a.s.o.)                         |
@@ -13,7 +13,7 @@
 #include <cmath>
 #include <iostream>
 #include <fstream>
-#include "WOLAP.h"
+#include "TVOLAP.h"
 
 #ifndef M_PI
 #define M_PI    3.14159265358979323846
@@ -97,21 +97,21 @@ int main()
     	}
     }
 
-    //---------------------------------WOLAP init----------------------------------------
+    //---------------------------------TVOLAP init----------------------------------------
 
-    WOLAP wolapInst(interleavedIR, numIR, numSampsIRPerChan, numChansIR, blockLen, numChansAudio);
+    TVOLAP TVOLAPInst(interleavedIR, numIR, numSampsIRPerChan, numChansIR, blockLen, numChansAudio);
 
-    //-------------------------WOLAP Response calculation--------------------------------
+    //-------------------------TVOLAP Response calculation--------------------------------
 
     for (unsigned int i=0, j=0, k=0; i<numBlocks; i++, j++)
     {
     	if (j>=numBlocksPerIR)
     	{
     		j = 0;
-    		wolapInst.setIR(++k);
+    		TVOLAPInst.setIR(++k);
     	}
 
-        wolapInst.process(&testSignal[i*numChansAudio*blockLen]);
+        TVOLAPInst.process(&testSignal[i*numChansAudio*blockLen]);
     }
 
     //------------------------------WAV file writing-------------------------------------
@@ -119,7 +119,7 @@ int main()
     uint16_t tmp16;
     uint32_t tmp32;
     std::vector<int16_t> tmp16Sig(testSignal.size(), 0);
-    std::ofstream outFile("resultWOLAP.wav", std::ios::out | std::ios::binary);
+    std::ofstream outFile("resultTVOLAP.wav", std::ios::out | std::ios::binary);
 
     if (outFile.is_open())
     {

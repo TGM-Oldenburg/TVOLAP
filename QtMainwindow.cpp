@@ -1,5 +1,5 @@
 /*-----------------------------------------------------------------------------*\
-| QtMainwindow which calculates and visualizes the result of the WOLAP          |
+| QtMainwindow which calculates and visualizes the result of the TVOLAP          |
 | processing routine.                                                           |
 |                                                                               |
 | Author: (c) Hagen Jaeger                           April 2016 - March 2017    |
@@ -10,7 +10,7 @@
 #include <vector>
 #include <cmath>
 #include "QtMainwindow.h"
-#include "WOLAP.h"
+#include "TVOLAP.h"
 
 #ifndef M_PI
 #define M_PI    3.14159265358979323846
@@ -95,9 +95,9 @@ MainWindow::MainWindow(QWidget *parent)
     	}
     }
 
-    //---------------------------------WOLAP init----------------------------------------
+    //---------------------------------TVOLAP init----------------------------------------
 
-    WOLAP wolapInst(interleavedIR, numIR, numSampsIRPerChan, numChansIR, blockLen, numChansAudio);
+    TVOLAP TVOLAPInst(interleavedIR, numIR, numSampsIRPerChan, numChansIR, blockLen, numChansAudio);
 
     //--------------------------------Plotting stuff-------------------------------------
 
@@ -129,10 +129,10 @@ MainWindow::MainWindow(QWidget *parent)
     	if (j>=numBlocksPerIR)
     	{
     		j = 0;
-    		wolapInst.setIR(++k);
+    		TVOLAPInst.setIR(++k);
     	}
 
-        wolapInst.process(&testSignal[i*numChansAudio*blockLen]);
+        TVOLAPInst.process(&testSignal[i*numChansAudio*blockLen]);
     }
 
     for (unsigned int i=numBlocks*blockLen*numChansAudio; i<numSampsAudioPerChan*numChansAudio; i++)

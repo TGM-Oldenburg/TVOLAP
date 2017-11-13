@@ -1,5 +1,5 @@
 /*-----------------------------------------------------------------------------*\
-| Qt example for visualizing the result of the WOLAP processing routine.        |
+| Qt example for visualizing the result of the TVOLAP processing routine.        |
 |                                                                               |
 | Author: (c) Hagen Jaeger                           April 2016 - March 2017    |
 | GPL Release: May 2017, License see end of file                                |
