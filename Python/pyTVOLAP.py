@@ -95,7 +95,7 @@ class TVOLAP():
             
         return data
         
-    def setImResp(self, IR_ID):
+    def setImpResp(self, IR_ID):
             if (IR_ID >= 0) and (IR_ID < self.numIR):
                 IR_ID = np.round(IR_ID)
                 self.IR_ID = IR_ID

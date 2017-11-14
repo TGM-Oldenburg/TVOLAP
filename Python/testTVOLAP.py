@@ -8,26 +8,22 @@
 #--------------------------------------------------------------------------
 
 from pyTVOLAP import TVOLAP
-import matplotlib.pyplot as plt
 import numpy as np
+import soundfile as sf
 
 fs = 48000
-timeDurAudio = 2
-freqAudio = 2
+timeDurAudio = 5
+freqAudio = 100
 timeDurIR = 0.1
 numChans = 4
-
-blockLen = 1024
-processLen = 2*blockLen
-nfft = 2*processLen
+numIR = 20
+blockLen = 2048
 
 impResp = np.zeros([numChans,int(np.round(fs*timeDurIR))])
-
 deltaImp = np.concatenate((np.array([1]), np.zeros(int(np.round(fs*timeDurIR*2)/2)-1)))
-
 deltaImp = np.fft.rfft(deltaImp)
 
-freqCuts = np.linspace(0.01,0.99,numChans+1)
+freqCuts = np.logspace(np.log10(0.01),np.log10(0.99),numChans+1)
 numFreqs = np.size(deltaImp,0)
 for cnt in np.arange(numChans):
     deltaImpCut = np.copy(deltaImp)
@@ -36,27 +32,33 @@ for cnt in np.arange(numChans):
     impResp[cnt,:] = np.fft.irfft(deltaImpCut)
 
 tmpSize = int(np.size(impResp,1)/2)    
-impResp = np.concatenate((impResp[:,tmpSize:], impResp[:,:tmpSize]),axis=1)
+impResp = np.concatenate((impResp[:,tmpSize:], impResp[:,:tmpSize]), axis=1)
+impResp = np.repeat([impResp,], numIR, axis=0)
+tmpIdx = np.arange(numChans)
+for cnt in np.arange(numIR):
+    impResp[cnt, :, :] = impResp[cnt, tmpIdx, :]
+    tmpIdx = np.append(tmpIdx[1:], tmpIdx[0])
 
-xAx = np.linspace(0, timeDurAudio, int(np.round(fs*timeDurAudio)))
-inSig = np.repeat([np.sign(np.sin(2*np.pi*freqAudio*xAx)),],numChans, axis=0)
-
-impResp = impResp[np.newaxis,:,:]
-
+inSig = np.random.randn(numChans, int(np.round(fs*timeDurAudio)))*0.1
+specLen = int(np.size(inSig,1)/2+1)
+weight = np.sqrt(1.0/(np.arange(specLen)+1)*specLen).astype(np.complex)
+inSig = np.fft.irfft(np.fft.rfft(inSig, axis=1)*weight, axis=1)
+    
 TVOLAPinst = TVOLAP(impResp, blockLen)
-
-numBlocks = int(np.round(fs*timeDurAudio)/blockLen)
-
 outSig = np.copy(inSig)
-
-for blockCnt in np.arange(numBlocks):
+actIR = 0
+for blockCnt in np.arange(int(np.round(fs*timeDurAudio)/blockLen)):
     tmpIdxLo = blockCnt*blockLen
     tmpIdxHi = tmpIdxLo+blockLen
     outSig[:,tmpIdxLo:tmpIdxHi] = TVOLAPinst.process(inSig[:,tmpIdxLo:tmpIdxHi])
-    
-plt.plot(inSig[0,:])
-plt.plot(outSig[0,:])
+    if blockCnt%10 == 9:
+        actIR = (actIR+1)%numIR
+        TVOLAPinst.setImpResp(actIR)
 
+for cnt in np.arange(numChans):
+    outSig[cnt,:] += cnt*2
+
+sf.write('tstOut.wav', outSig[0,:], fs)
     
 #--------------------Licence ---------------------------------------------
 # Copyright (c) 2012-2017 Hagen Jaeger                           
