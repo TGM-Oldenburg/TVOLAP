@@ -8,7 +8,9 @@
 | LGPL Release: May 2017, License see end of file                               |
 \*-----------------------------------------------------------------------------*/
 
+#include <stdlib.h>
 #include <stdint.h>
+#include <time.h>
 #include <vector>
 #include <cmath>
 #include <iostream>
@@ -23,108 +25,125 @@ int main()
 {
     //----------------------------TestSignalGeneration----------------------------------
     uint32_t sampFreq = 48000;
-    double timeDurAudio = 3.0;
-    double timeDurIR = 0.25;
-    double tmpSum = 0.0001, alpha, minVal, maxVal, tmpVal;
-    uint32_t squareWaveFreq = 3;
-    uint32_t oscillatorFreq = 10;
-    uint32_t freqIncrement = 10;
-    uint32_t numChansAudio = 3;
-    uint32_t numSampsIRPerChan = (double) sampFreq*timeDurIR;
-    uint32_t numIR = 4;
-    uint32_t numChansIR = 3;
-    uint32_t numSampsAudioPerChan = (double) sampFreq*timeDurAudio;
+    double timeDurAudio = 5.0;
+    double timeDurIR = 0.2;
+    uint32_t numChans = 4;
+    uint32_t numIR = 20;
     uint32_t blockLen = 512;
-    uint32_t numBlocks = numSampsAudioPerChan/blockLen;
-    uint32_t numBlocksPerIR = numBlocks/numIR;
 
-    std::vector<double> testSignal(numChansAudio*numSampsAudioPerChan, 0.0);
+    uint32_t numSampsAudioPerChan = uint32_t(pow(2, round(log2(sampFreq*timeDurAudio))));
+    uint32_t numSampsIRPerChan = uint32_t(pow(2, round(log2(sampFreq*timeDurIR))));
+    uint32_t numBlocks = numSampsAudioPerChan/blockLen;
+
+    std::vector<double> testSignal(numSampsAudioPerChan, 0.0);
+    std::vector<double> testSignalInterleaved(numChans*numSampsAudioPerChan, 0.0);
     std::vector< std::vector< std::vector<double> > > testIR;
-    std::vector<double> interleavedIR(numIR*numSampsIRPerChan*numChansIR, 0.0);
+    std::vector<double> interleavedIR(numIR*numSampsIRPerChan*numChans, 0.0);
+    std::vector<complex_float64> tmpFreq;
+    double mem;
+    srand(time(NULL));
 
     testIR.resize(numIR);
-    for (unsigned int i = 0; i < numIR; i++)
+    for (uint32_t i = 0; i < numIR; i++)
     {
-    	testIR.at(i).resize(numChansIR);
-    	for (unsigned int j = 0; j < numChansIR; j++)
+    	testIR.at(i).resize(numChans);
+    	for (uint32_t j = 0; j < numChans; j++)
     		testIR.at(i).at(j).resize(numSampsIRPerChan, 0.0);
     }
 
-    //test input is a square wave with iFreq Hz
-    for (unsigned int i=0; i<numSampsAudioPerChan*numChansAudio; i+=numChansAudio)
+    //test input is white noise
+    tmpFreq.resize(numSampsAudioPerChan/2+1);
+    for (uint32_t i=0; i<numSampsAudioPerChan; i++)
     {
-        tmpVal = 0.7071*(((sin(2.0*M_PI*squareWaveFreq*((double)i/numChansAudio/sampFreq)))>0) ? (1):(-1));
-        for (unsigned int j=0; j<numChansAudio; j++)
-            testSignal.at(i+j) = tmpVal;
+    	testSignal.at(i) = double(rand()%0x10000)/double(0x8000)-1.0;
+
+    	for (uint32_t j=0; j<10; j++)
+    		testSignal.at(i) += double(rand()%0x10000)/double(0x8000)-1.0;
+
+    	testSignal.at(i) *= 0.1;
     }
 
-    //test impulse response is a damped oscillator with same frequency as test signal
-    for (unsigned int i=0; i<numIR; i++)
-    {
-		for (unsigned int j=0; j<numChansIR; j++)
-			testIR.at(i).at(j).at(numSampsIRPerChan/2) = 1.0;
+	rfft_double(testSignal.data(), tmpFreq.data(), numSampsAudioPerChan);
 
-		alpha = 1.0 - 1.0/(timeDurIR*0.1*sampFreq);
-		for (unsigned int k=numSampsIRPerChan/2+1; k<numSampsIRPerChan; k++)
-		{
-			for (unsigned int j=0; j<numChansIR; j++)
-				testIR.at(i).at(j).at(k) = alpha*testIR.at(i).at(j).at(k-1);
-		}
-		for (unsigned int k=numSampsIRPerChan/2; k<numSampsIRPerChan; k++)
-		{
-			tmpVal = -sin(2.0*M_PI*oscillatorFreq*((double)(k-numSampsIRPerChan/2)/sampFreq));
-			for (unsigned int j=0; j<numChansIR; j++)
-				testIR.at(i).at(j).at(k) *= tmpVal;
-		}
-		oscillatorFreq += freqIncrement;
+    for (uint32_t i=0; i<numSampsAudioPerChan/2+1; i++)
+    	tmpFreq.at(i) = complex_mulr(tmpFreq.at(i), 0.33*sqrt(numSampsAudioPerChan/double(i+1)));
+
+	irfft_double(tmpFreq.data(), testSignal.data(), numSampsAudioPerChan);
+
+    for (uint32_t i=0; i<numSampsAudioPerChan-1; i++)
+    {
+    	for (uint32_t j=0; j<numChans; j++)
+    		testSignalInterleaved.at(i*numChans+j) = testSignal.at(i);
     }
 
-    for (unsigned int i=0; i<numIR; i++)
+    //test impulse response are logarithmically spaced bandpass filters (read from file)
+    tmpFreq.resize(numSampsIRPerChan/2+1);
+    for (uint32_t i=0; i<numIR; i++)
     {
-    	for (unsigned int j=0; j<numChansIR; j++)
+		for (uint32_t j=0; j<numChans; j++)
+		{
+			testIR.at(i).at(j).at(0) = 1.0;
+			rfft_double(testIR.at(i).at(j).data(), tmpFreq.data(), numSampsIRPerChan);
+
+			uint32_t k = (i+j)%numChans;
+			double loBnd = pow(10, log10(0.99/0.01)/numChans*k+log10(numSampsIRPerChan/2*0.01));
+			double upBnd = pow(10, log10(0.99/0.01)/numChans*(k+1)+log10(numSampsIRPerChan/2*0.01));
+
+			for (uint32_t l=0; l<uint32_t(loBnd); l++)
+				tmpFreq.at(l) = {0.0,0.0};
+
+
+			for (uint32_t l=uint32_t(upBnd); l<numSampsIRPerChan/2+1; l++)
+				tmpFreq.at(l) = {0.0,0.0};
+
+			irfft_double(tmpFreq.data(), testIR.at(i).at(j).data(), numSampsIRPerChan);
+
+			for (uint32_t l=0; l<numSampsIRPerChan/2; l++)
+			{
+				mem = testIR.at(i).at(j).at(l);
+				testIR.at(i).at(j).at(l) = testIR.at(i).at(j).at(l+numSampsIRPerChan/2);
+				testIR.at(i).at(j).at(l+numSampsIRPerChan/2) = mem;
+			}
+		}
+    }
+
+    for (uint32_t i=0; i<numIR; i++)
+    {
+    	for (uint32_t j=0; j<numChans; j++)
     	{
-			tmpSum = 0.0;
-			for (unsigned int k=0; k<numSampsIRPerChan; k++)
-			{
-				tmpVal = testIR.at(i).at(j).at(k);
-				tmpSum += (tmpVal>0) ? (tmpVal) : (-tmpVal);
-			}
-			for (unsigned int k=0; k<numSampsIRPerChan; k++)
-			{
-				testIR.at(i).at(j).at(k)/= tmpSum;
-				interleavedIR.at(k+(i*numChansIR+j)*numSampsIRPerChan) = testIR.at(i).at(j).at(k);
-			}
+			for (uint32_t k=0; k<numSampsIRPerChan; k++)
+				interleavedIR.at(k+(i*numChans+j)*numSampsIRPerChan) = testIR.at(i).at(j).at(k);
     	}
     }
 
     //---------------------------------TVOLAP init----------------------------------------
 
-    TVOLAP TVOLAPInst(interleavedIR, numIR, numSampsIRPerChan, numChansIR, blockLen, numChansAudio);
+    TVOLAP TVOLAPInst(interleavedIR, numIR, numSampsIRPerChan, numChans, blockLen, numChans);
 
     //-------------------------TVOLAP Response calculation--------------------------------
 
-    for (unsigned int i=0, j=0, k=0; i<numBlocks; i++, j++)
+    for (uint32_t i=0, j=0, k=0; i<numBlocks; i++, j++)
     {
-    	if (j>=numBlocksPerIR)
+    	if (j>=50)
     	{
     		j = 0;
     		TVOLAPInst.setIR(++k);
     	}
 
-        TVOLAPInst.process(&testSignal[i*numChansAudio*blockLen]);
+        TVOLAPInst.process(&testSignalInterleaved[i*numChans*blockLen]);
     }
 
     //------------------------------WAV file writing-------------------------------------
 
     uint16_t tmp16;
     uint32_t tmp32;
-    std::vector<int16_t> tmp16Sig(testSignal.size(), 0);
-    std::ofstream outFile("resultTVOLAP.wav", std::ios::out | std::ios::binary);
+    std::vector<int16_t> tmp16Sig(testSignalInterleaved.size(), 0);
+    std::ofstream outFile("tstOut.wav", std::ios::out | std::ios::binary);
 
     if (outFile.is_open())
     {
         outFile.write("RIFF", 4);
-        tmp32 = testSignal.size()*sizeof(int16_t)+36;
+        tmp32 = testSignalInterleaved.size()*sizeof(int16_t)+36;
         outFile.write((char*) &tmp32, 4);
         outFile.write("WAVE", 4);
 
@@ -133,23 +152,23 @@ int main()
         outFile.write((char*) &tmp32, 4);
         tmp16 = 1;
         outFile.write((char*) &tmp16, 2);
-        tmp16 = numChansAudio;
+        tmp16 = numChans;
         outFile.write((char*) &tmp16, 2);
         outFile.write((char*) &sampFreq, 4);
-        tmp32 = sampFreq*sizeof(int16_t)*numChansAudio;
+        tmp32 = sampFreq*sizeof(int16_t)*numChans;
         outFile.write((char*) &tmp32, 4); //bytes per second
-        tmp32 = sizeof(int16_t)*numChansAudio;
+        tmp32 = sizeof(int16_t)*numChans;
         outFile.write((char*) &tmp32, 2);
         tmp32 = 16;
         outFile.write((char*) &tmp32, 2);
         outFile.write("data", 4);
-        tmp32 = testSignal.size()*sizeof(int16_t)-44;
+        tmp32 = testSignalInterleaved.size()*sizeof(int16_t)-44;
         outFile.write((char*) &tmp32, 4);
 
-        for (uint32_t i=0; i< testSignal.size(); i++)
-            tmp16Sig[i] = testSignal[i]*0x7FFF;
+        for (uint32_t i=0; i< testSignalInterleaved.size(); i++)
+        	tmp16Sig[i] = testSignalInterleaved[i]*0x7FFF;
 
-        outFile.write((char*) tmp16Sig.data(), tmp16Sig.size()*sizeof(int16_t)-numChansAudio*blockLen);
+        outFile.write((char*) tmp16Sig.data(), tmp16Sig.size()*sizeof(int16_t)-numChans*blockLen);
 
         outFile.close();
 

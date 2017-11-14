@@ -35,6 +35,11 @@ classdef TVOLAP < handle
                     '<length of one IR> x <channels> x <number of IRs>.'])
             end
             
+            if size(impResp,2) > size(impResp,1)
+                error(['Channels > samples per IR. Bad matrix size, has to be ' ...
+                       '<length of one IR> x <channels> x <number of IRs>.'])
+            end
+            
             if blockLen ~= 2^round(log2(blockLen))
                 error('block length has to be element of 2^n.');
             end

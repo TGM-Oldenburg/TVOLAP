@@ -22,6 +22,9 @@ class TVOLAP():
             
         if impulseResponse.ndim != 3:
             raise ValueError('ImpulseResponse response is not a 3dim matrix.')
+            
+        if np.size(impulseResponse[0,:,0]) > np.size(impulseResponse[0,0,:]):
+            raise ValueError('channels > samples per IR. Bad formatted matrix.')
 
         if blockLength != int(2**np.round(np.log2(blockLength))):
             raise ValueError('blockLength has to be a power of two (2^n).')
@@ -35,11 +38,11 @@ class TVOLAP():
         self.numIR = np.size(impulseResponse, 0)
         self.numChans = np.size(impulseResponse, 1)
         
-        self.numParts = int(np.ceil(np.size(impulseResponse,2)/self.processLen))
+        self.numParts = int(np.ceil(np.size(impulseResponse,2)/float(self.processLen)))
         self.numFreqMems = int(2*self.numParts)
         numSampsIR = int(self.numParts*self.processLen)
-        impulseResponse = np.concatenate((impulseResponse, np.zeros([np.size(impulseResponse,0), 
-                       np.size(impulseResponse,1), numSampsIR-np.size(impulseResponse,2)])),axis = 2)
+        impulseResponse = np.append(impulseResponse, np.zeros([np.size(impulseResponse[:,0,0]), 
+                       np.size(impulseResponse[0,:,0]), numSampsIR-np.size(impulseResponse[0,0,:])]),axis = 2)
 
         self.convMem = np.zeros([2,self.numChans,self.processLen])
         self.outDataMem = np.zeros([self.numChans, self.blockLen])
@@ -65,7 +68,7 @@ class TVOLAP():
         self.IR_ID = 0
         
     def process(self, data):
-        inDataProcess = np.concatenate((self.dataPre,data), axis=1)*self.win
+        inDataProcess = np.append(self.dataPre,data, axis=1)*self.win
         self.dataPre = np.copy(data)
         self.freqMem[self.freqSaveCnt,:,:] = np.fft.rfft(inDataProcess, self.nfft)
 

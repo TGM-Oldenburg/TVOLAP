@@ -10,25 +10,24 @@
 from pyTVOLAP import TVOLAP
 import numpy as np
 import soundfile as sf
+import matplotlib.pyplot as plt
 
 fs = 48000
 timeDurAudio = 5
-freqAudio = 100
-timeDurIR = 0.1
+timeDurIR = 0.2
 numChans = 4
 numIR = 20
-blockLen = 2048
+blockLen = 512
 
 impResp = np.zeros([numChans,int(np.round(fs*timeDurIR))])
-deltaImp = np.concatenate((np.array([1]), np.zeros(int(np.round(fs*timeDurIR*2)/2)-1)))
+deltaImp = np.append(np.array([1]), np.zeros(int(np.round(fs*timeDurIR*2)/2)-1))
 deltaImp = np.fft.rfft(deltaImp)
 
-freqCuts = np.logspace(np.log10(0.01),np.log10(0.99),numChans+1)
-numFreqs = np.size(deltaImp,0)
+freqCuts = np.round(np.logspace(np.log10(0.01),np.log10(0.99),numChans+1)*np.size(deltaImp,0)).astype(int)
 for cnt in np.arange(numChans):
     deltaImpCut = np.copy(deltaImp)
-    deltaImpCut[:int(numFreqs*freqCuts[cnt])] = 0.0
-    deltaImpCut[int(numFreqs*freqCuts[cnt+1]):] = 0.0
+    deltaImpCut[:freqCuts[cnt]] = 0.0
+    deltaImpCut[freqCuts[cnt+1]:] = 0.0
     impResp[cnt,:] = np.fft.irfft(deltaImpCut)
 
 tmpSize = int(np.size(impResp,1)/2)    
@@ -39,7 +38,7 @@ for cnt in np.arange(numIR):
     impResp[cnt, :, :] = impResp[cnt, tmpIdx, :]
     tmpIdx = np.append(tmpIdx[1:], tmpIdx[0])
 
-inSig = np.random.randn(numChans, int(np.round(fs*timeDurAudio)))*0.1
+inSig = np.random.randn(numChans, int(np.round(fs*timeDurAudio/blockLen)*blockLen))*0.1
 specLen = int(np.size(inSig,1)/2+1)
 weight = np.sqrt(1.0/(np.arange(specLen)+1)*specLen).astype(np.complex)
 inSig = np.fft.irfft(np.fft.rfft(inSig, axis=1)*weight, axis=1)
@@ -51,14 +50,11 @@ for blockCnt in np.arange(int(np.round(fs*timeDurAudio)/blockLen)):
     tmpIdxLo = blockCnt*blockLen
     tmpIdxHi = tmpIdxLo+blockLen
     outSig[:,tmpIdxLo:tmpIdxHi] = TVOLAPinst.process(inSig[:,tmpIdxLo:tmpIdxHi])
-    if blockCnt%10 == 9:
+    if blockCnt%50 == 49:
         actIR = (actIR+1)%numIR
         TVOLAPinst.setImpResp(actIR)
 
-for cnt in np.arange(numChans):
-    outSig[cnt,:] += cnt*2
-
-sf.write('tstOut.wav', outSig[0,:], fs)
+sf.write('tstOut.wav', outSig.T, fs, 'PCM_16')
     
 #--------------------Licence ---------------------------------------------
 # Copyright (c) 2012-2017 Hagen Jaeger                           

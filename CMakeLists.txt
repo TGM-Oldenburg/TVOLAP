@@ -33,16 +33,18 @@ set(TVOLAP_SOURCES
     )
 
 set(EXAMPLE_SOURCES
-    processExample.cpp
+    fft.cpp
+    fft.h
+    testTVOLAP.cpp
     )
 
 #Add the library and executable
 add_library(TVOLAP SHARED ${TVOLAP_SOURCES})
 
-add_executable(TVOLAP_Example ${EXAMPLE_SOURCES})
+add_executable(testTVOLAP ${EXAMPLE_SOURCES})
 
 #Link system independent required libraries against the VARy executable
-target_link_libraries(TVOLAP_Example TVOLAP)
+target_link_libraries(testTVOLAP TVOLAP)
 
 #Copy all related dynamic libraries to the binary folder if we are on windows (so we can start the .exe without external includes)
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")

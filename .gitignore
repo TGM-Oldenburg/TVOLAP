@@ -6,4 +6,6 @@
 *.mp3
 *.aiff
 *.flac
+*.pyc
 __pycache__
+octave-workspace
