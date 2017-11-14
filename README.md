@@ -1,4 +1,4 @@
-[W]eighted [O]ver[L]ap [A]dd in [P]artitions 
+[T]ime [V]ariant [O]ver[L]ap [A]dd in [P]artitions 
 ==============================
 
 Reference: Jaeger, Bitzer, Simmer, Blau: "Echtzeitfähiges binaurales Rendering mit Bewegungssensoren von 3D-Brillen", Tagungsband DAGA 2017 - 43. Jahrestagung für Akustik, 6.-9. März 2017, Kiel, ISBN 978-3-939296-12-6
@@ -11,7 +11,7 @@ This project implements a weighted overlap add routine which works in partitions
 
 ``TVOLAP.m`` and ``testTVOLAP.h`` in the MATLAB_Octave subfolder implement the processing routine as Octave class and show its usage. The implementation is also compatible with MATLAB (Tested with MATLAB r2016a and Octave 4.0.0). This implementation is available under the MIT license.
 
-``pyTVOLAP.py`` and ``testTVOLAP.py`` in the Python subfolder implement the processing routine as Python class and show its usage. Tested with Python 2.7 and 3.6. This implementation is available under the MIT license.
+``pyTVOLAP.py`` and ``testTVOLAP.py`` in the Python subfolder implement the processing routine as Python class and show its usage. The example depends on bastibes soundfile library (https://github.com/bastibe/SoundFile). Tested with Python 2.7 and 3.6. This implementation is available under the MIT license.
 
 ``processExample.cpp`` stores a processing example of the convolution process by writing the resulting test signal to a .wav file, so that it can be easily loaded into MATLAB / Audacity a.s.o. for visualization purposes. This example is licensed under the LGPLv3 (see ``COPYING.LESSER.txt`` for a copy of the license).
 
