@@ -28,14 +28,15 @@ public:
 			return -1;
     	else
     		this->actIR = actIR;
+
     	return 0;
     }
 
 private:
     uint32_t blockLen, processLen, nfft, numIR, actIR, numChansAudio, numChansIR, numParts, numMems, overlapFact, freqSaveCnt, convSaveCnt;
-    std::vector<double> winVec, inBlockWin, outBlock;
+    std::vector<double> winVec, inBlockWin, ifftBlock;
     std::vector<complex_float64> inSpectrumSum;
-    std::vector< std::vector<double> > inBlock, outBlockMat, outBlockMatMem;
+    std::vector< std::vector<double> > inBlock, outBlock, outBlockMem;
     std::vector< std::vector< std::vector<double> > > convMem;
     std::vector< std::vector< std::vector<complex_float64> > > inSpectrum;
     std::vector< std::vector< std::vector< std::vector<complex_float64> > > > filterSpectrum;

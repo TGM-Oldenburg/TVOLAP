@@ -13,6 +13,7 @@ fs = 48000;
 timeDurAudio = 5;
 timeDurIR = 0.2;
 numChans = 4;
+numChansWav = 2;
 numIR = 20;
 blockLen = 512;
 
@@ -22,8 +23,9 @@ deltaImp = fft(deltaImp);
 deltaImp = deltaImp(1:end/2+1);
 
 freqCuts = round(logspace(log10(0.01),log10(0.99),numChans+1)*size(deltaImp,1));
+weight = sqrt(freqCuts(2)/freqCuts(1)
 for cnt = 1:numChans
-    deltaImpCut = deltaImp;
+    deltaImpCut = numChans*deltaImp./weight^(cnt-1);
     deltaImpCut(1:freqCuts(cnt)) = 0.0;
     deltaImpCut(freqCuts(cnt+1):end) = 0.0;
     impResp(:,cnt) = real(ifft([deltaImpCut; conj(deltaImpCut(end-1:-1:2))]));
@@ -68,7 +70,11 @@ for chanCnt=1:numChans
 end
 disp(['filter(b,1,x) needed ' , num2str(toc*1000) , 'ms to process.']);
 
-audiowrite('outTst.wav', outSig, fs)
+if numChans>1
+    audiowrite('outTst.wav', outSig(:,1:numChansWav), fs)
+else
+    audiowrite('outTst.wav', outSig, fs)
+end
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) 2012-2017 Hagen Jaeger                           

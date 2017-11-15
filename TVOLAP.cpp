@@ -32,7 +32,7 @@ TVOLAP::TVOLAP(std::vector<double> &interleavedIR, uint32_t numIR, uint32_t lenI
     intLenIR = (((lenIR-1)/processLen+1)*processLen);
     this->numParts = intLenIR/processLen;
     this->overlapFact = 2;
-    this->numMems = numParts*overlapFact;
+    this->numMems = numParts*overlapFact-1;
     this->freqSaveCnt = 0;
     this->convSaveCnt = 0;
     this->actIR = 0;
@@ -45,9 +45,9 @@ TVOLAP::TVOLAP(std::vector<double> &interleavedIR, uint32_t numIR, uint32_t lenI
     for (sampleCnt=0; sampleCnt<nfft; sampleCnt++)
         inBlockWin.at(sampleCnt) = 0.0;
 
-    outBlock.resize(nfft);
+    ifftBlock.resize(nfft);
     for (sampleCnt=0; sampleCnt<nfft; sampleCnt++)
-        outBlock.at(sampleCnt) = 0.0;
+        ifftBlock.at(sampleCnt) = 0.0;
 
     inSpectrumSum.resize(processLen+1);
 
@@ -78,20 +78,20 @@ TVOLAP::TVOLAP(std::vector<double> &interleavedIR, uint32_t numIR, uint32_t lenI
             inBlock.at(chanCnt).at(sampleCnt) = 0.0;
     }
 
-    outBlockMat.resize(numChansAudio);
+    outBlock.resize(numChansAudio);
     for(chanCnt=0; chanCnt<numChansAudio; chanCnt++)
     {
-        outBlockMat.at(chanCnt).resize(processLen);
+        outBlock.at(chanCnt).resize(processLen);
         for (sampleCnt=0; sampleCnt<processLen; sampleCnt++)
-            outBlockMat.at(chanCnt).at(sampleCnt) = 0.0;
+            outBlock.at(chanCnt).at(sampleCnt) = 0.0;
     }
 
-    outBlockMatMem.resize(numChansAudio);
+    outBlockMem.resize(numChansAudio);
     for(chanCnt=0; chanCnt<numChansAudio; chanCnt++)
     {
-        outBlockMatMem.at(chanCnt).resize(blockLen);
+        outBlockMem.at(chanCnt).resize(blockLen);
         for (sampleCnt=0; sampleCnt<blockLen; sampleCnt++)
-            outBlockMatMem.at(chanCnt).at(sampleCnt) = 0.0;
+            outBlockMem.at(chanCnt).at(sampleCnt) = 0.0;
     }
 
     convMem.resize(numChansAudio);
@@ -171,27 +171,27 @@ void TVOLAP::process(double *inBlockInterleaved)
                 freqReadCnt+=numMems;
         }
 
-        irfft_double(inSpectrumSum.data(), outBlock.data(), nfft);
+        irfft_double(inSpectrumSum.data(), ifftBlock.data(), nfft);
 
         for (sampleCnt=0; sampleCnt<processLen; sampleCnt++)
         {
-            outBlockMat[chanCntAudio][sampleCnt] = outBlock[sampleCnt]+convMem[chanCntAudio][convSaveCnt][sampleCnt];
-            convMem[chanCntAudio][convSaveCnt][sampleCnt] = outBlock[sampleCnt+processLen];
+            outBlock[chanCntAudio][sampleCnt] = ifftBlock[sampleCnt]+convMem[chanCntAudio][convSaveCnt][sampleCnt];
+            convMem[chanCntAudio][convSaveCnt][sampleCnt] = ifftBlock[sampleCnt+processLen];
         }
 
         for (sampleCnt=0, iChanPosAudio=chanCntAudio; sampleCnt<blockLen; sampleCnt++, iChanPosAudio+=numChansAudio)
         {
-            inBlockInterleaved[iChanPosAudio] = outBlockMat[chanCntAudio][sampleCnt]+outBlockMatMem[chanCntAudio][sampleCnt];
-            outBlockMatMem[chanCntAudio][sampleCnt] = outBlockMat[chanCntAudio][sampleCnt+blockLen];
+            inBlockInterleaved[iChanPosAudio] = outBlock[chanCntAudio][sampleCnt]+outBlockMem[chanCntAudio][sampleCnt];
+            outBlockMem[chanCntAudio][sampleCnt] = outBlock[chanCntAudio][sampleCnt+blockLen];
         }
     }
 
     freqSaveCnt++;
     convSaveCnt++;
     if(freqSaveCnt>=numMems)
-            freqSaveCnt=0;
+		freqSaveCnt=0;
     if(convSaveCnt>=overlapFact)
-            convSaveCnt=0;
+		convSaveCnt=0;
 }
 
 /*------------------------------License---------------------------------------*\

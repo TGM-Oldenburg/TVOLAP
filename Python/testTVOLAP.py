@@ -10,12 +10,12 @@
 from pyTVOLAP import TVOLAP
 import numpy as np
 import soundfile as sf
-import matplotlib.pyplot as plt
 
 fs = 48000
 timeDurAudio = 5
 timeDurIR = 0.2
-numChans = 4
+numChans = 8
+numChansWav = 2
 numIR = 20
 blockLen = 512
 
@@ -24,8 +24,9 @@ deltaImp = np.append(np.array([1]), np.zeros(int(np.round(fs*timeDurIR*2)/2)-1))
 deltaImp = np.fft.rfft(deltaImp)
 
 freqCuts = np.round(np.logspace(np.log10(0.01),np.log10(0.99),numChans+1)*np.size(deltaImp,0)).astype(int)
+weight = np.sqrt(freqCuts[1]/freqCuts[0])
 for cnt in np.arange(numChans):
-    deltaImpCut = np.copy(deltaImp)
+    deltaImpCut = numChans*np.copy(deltaImp)/weight**(cnt)
     deltaImpCut[:freqCuts[cnt]] = 0.0
     deltaImpCut[freqCuts[cnt+1]:] = 0.0
     impResp[cnt,:] = np.fft.irfft(deltaImpCut)
@@ -39,9 +40,6 @@ for cnt in np.arange(numIR):
     tmpIdx = np.append(tmpIdx[1:], tmpIdx[0])
 
 inSig = np.random.randn(numChans, int(np.round(fs*timeDurAudio/blockLen)*blockLen))*0.1
-specLen = int(np.size(inSig,1)/2+1)
-weight = np.sqrt(1.0/(np.arange(specLen)+1)*specLen).astype(np.complex)
-inSig = np.fft.irfft(np.fft.rfft(inSig, axis=1)*weight, axis=1)
     
 TVOLAPinst = TVOLAP(impResp, blockLen)
 outSig = np.copy(inSig)
@@ -54,8 +52,10 @@ for blockCnt in np.arange(int(np.round(fs*timeDurAudio)/blockLen)):
         actIR = (actIR+1)%numIR
         TVOLAPinst.setImpResp(actIR)
 
-sf.write('tstOut.wav', outSig.T, fs, 'PCM_16')
-    
+if numChans>1:
+    sf.write('tstOut.wav', outSig[:numChansWav,:].T, fs, 'PCM_16')
+else:
+    sf.write('tstOut.wav', outSig.T, fs, 'PCM_16')
 #--------------------Licence ---------------------------------------------
 # Copyright (c) 2012-2017 Hagen Jaeger                           
 #

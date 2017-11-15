@@ -24,23 +24,24 @@
 int main()
 {
     //----------------------------TestSignalGeneration----------------------------------
-    uint32_t sampFreq = 48000;
-    double timeDurAudio = 5.0;
-    double timeDurIR = 0.2;
-    uint32_t numChans = 4;
-    uint32_t numIR = 20;
-    uint32_t blockLen = 512;
+    const uint32_t sampFreq = 48000;
+    const double timeDurAudio = 5.0;
+    const double timeDurIR = 0.2;
+    const uint32_t numChans = 8;
+    const uint32_t numIR = 20;
+    const uint32_t blockLen = 512;
 
-    uint32_t numSampsAudioPerChan = uint32_t(pow(2, round(log2(sampFreq*timeDurAudio))));
-    uint32_t numSampsIRPerChan = uint32_t(pow(2, round(log2(sampFreq*timeDurIR))));
-    uint32_t numBlocks = numSampsAudioPerChan/blockLen;
+    const uint32_t numSampsAudioPerChan = uint32_t(round(sampFreq*timeDurAudio))/2*2;
+    const uint32_t numSampsIRPerChan = uint32_t(pow(2, round(log2(sampFreq*timeDurIR))));
+    const uint32_t numBlocks = numSampsAudioPerChan/blockLen;
+    const uint32_t numRepitionsForCentralLimitTheorem = 10;
 
     std::vector<double> testSignal(numSampsAudioPerChan, 0.0);
     std::vector<double> testSignalInterleaved(numChans*numSampsAudioPerChan, 0.0);
     std::vector< std::vector< std::vector<double> > > testIR;
     std::vector<double> interleavedIR(numIR*numSampsIRPerChan*numChans, 0.0);
     std::vector<complex_float64> tmpFreq;
-    double mem;
+    double mean, RMS;
     srand(time(NULL));
 
     testIR.resize(numIR);
@@ -51,24 +52,18 @@ int main()
     		testIR.at(i).at(j).resize(numSampsIRPerChan, 0.0);
     }
 
-    //test input is white noise
-    tmpFreq.resize(numSampsAudioPerChan/2+1);
+    //test input is white noise with no zero mean and 0dBFS std
     for (uint32_t i=0; i<numSampsAudioPerChan; i++)
     {
-    	testSignal.at(i) = double(rand()%0x10000)/double(0x8000)-1.0;
-
-    	for (uint32_t j=0; j<10; j++)
-    		testSignal.at(i) += double(rand()%0x10000)/double(0x8000)-1.0;
-
-    	testSignal.at(i) *= 0.1;
+    	testSignal.at(i) = double(rand()%0x10001)/double(0x4000)-1.0;
+    	for (uint32_t j=0; j<numRepitionsForCentralLimitTheorem; j++)
+    		testSignal.at(i) += double(rand()%0x10001)/double(0x4000)-1.0;
+    	mean += testSignal.at(i)/double(numSampsAudioPerChan);
+    	RMS += testSignal.at(i)*testSignal.at(i)/double(numSampsAudioPerChan);
     }
 
-	rfft_double(testSignal.data(), tmpFreq.data(), numSampsAudioPerChan);
-
-    for (uint32_t i=0; i<numSampsAudioPerChan/2+1; i++)
-    	tmpFreq.at(i) = complex_mulr(tmpFreq.at(i), 0.33*sqrt(numSampsAudioPerChan/double(i+1)));
-
-	irfft_double(tmpFreq.data(), testSignal.data(), numSampsAudioPerChan);
+    for (uint32_t i=0; i<numSampsAudioPerChan; i++)
+    	testSignal.at(i) = (testSignal.at(i)-mean)/sqrt(RMS)*0.1;
 
     for (uint32_t i=0; i<numSampsAudioPerChan-1; i++)
     {
@@ -78,16 +73,19 @@ int main()
 
     //test impulse response are logarithmically spaced bandpass filters (read from file)
     tmpFreq.resize(numSampsIRPerChan/2+1);
+	double loBnd = numSampsIRPerChan/2*0.01;
+	double upBnd = pow(10, log10(0.99/0.01)/numChans+log10(numSampsIRPerChan/2*0.01));
+    double weight = sqrt(upBnd/loBnd);
     for (uint32_t i=0; i<numIR; i++)
     {
 		for (uint32_t j=0; j<numChans; j++)
 		{
-			testIR.at(i).at(j).at(0) = 1.0;
+			uint32_t k = (i+j)%numChans;
+			testIR.at(i).at(j).at(0) = double(numChans)/pow(weight, double(k));
 			rfft_double(testIR.at(i).at(j).data(), tmpFreq.data(), numSampsIRPerChan);
 
-			uint32_t k = (i+j)%numChans;
-			double loBnd = pow(10, log10(0.99/0.01)/numChans*k+log10(numSampsIRPerChan/2*0.01));
-			double upBnd = pow(10, log10(0.99/0.01)/numChans*(k+1)+log10(numSampsIRPerChan/2*0.01));
+			loBnd = pow(10, log10(0.99/0.01)/numChans*k+log10(numSampsIRPerChan/2*0.01));
+			upBnd = pow(10, log10(0.99/0.01)/numChans*(k+1)+log10(numSampsIRPerChan/2*0.01));
 
 			for (uint32_t l=0; l<uint32_t(loBnd); l++)
 				tmpFreq.at(l) = {0.0,0.0};
@@ -98,6 +96,7 @@ int main()
 
 			irfft_double(tmpFreq.data(), testIR.at(i).at(j).data(), numSampsIRPerChan);
 
+			double mem;
 			for (uint32_t l=0; l<numSampsIRPerChan/2; l++)
 			{
 				mem = testIR.at(i).at(j).at(l);
@@ -124,11 +123,8 @@ int main()
 
     for (uint32_t i=0, j=0, k=0; i<numBlocks; i++, j++)
     {
-    	if (j>=50)
-    	{
-    		j = 0;
+    	if (j%50 == 49)
     		TVOLAPInst.setIR(++k);
-    	}
 
         TVOLAPInst.process(&testSignalInterleaved[i*numChans*blockLen]);
     }
