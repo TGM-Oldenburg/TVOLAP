@@ -99,8 +99,8 @@ int main()
 			double mem;
 			for (uint32_t l=0; l<numSampsIRPerChan/2; l++)
 			{
-				mem = testIR.at(i).at(j).at(l);
-				testIR.at(i).at(j).at(l) = testIR.at(i).at(j).at(l+numSampsIRPerChan/2);
+                mem = testIR.at(i).at(j).at(l)*(0.5+0.5*cos(2*l*M_PI/(numSampsIRPerChan-1)));
+                testIR.at(i).at(j).at(l) = testIR.at(i).at(j).at(l+numSampsIRPerChan/2)*(0.5-0.5*cos(2*l*M_PI/(numSampsIRPerChan-1)));
 				testIR.at(i).at(j).at(l+numSampsIRPerChan/2) = mem;
 			}
 		}

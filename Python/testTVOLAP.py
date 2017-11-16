@@ -25,14 +25,15 @@ deltaImp = np.fft.rfft(deltaImp)
 
 freqCuts = np.round(np.logspace(np.log10(0.01),np.log10(0.99),numChans+1)*np.size(deltaImp,0)).astype(int)
 weight = np.sqrt(freqCuts[1]/freqCuts[0])
+hannWin = 0.5-0.5*np.cos(np.linspace(-np.pi, np.pi, np.size(impResp,1)));
 for cnt in np.arange(numChans):
     deltaImpCut = numChans*np.copy(deltaImp)/weight**(cnt)
     deltaImpCut[:freqCuts[cnt]] = 0.0
     deltaImpCut[freqCuts[cnt+1]:] = 0.0
-    impResp[cnt,:] = np.fft.irfft(deltaImpCut)
+    impResp[cnt,:] = np.fft.irfft(deltaImpCut)*hannWin
 
 tmpSize = int(np.size(impResp,1)/2)    
-impResp = np.concatenate((impResp[:,tmpSize:], impResp[:,:tmpSize]), axis=1)
+impResp = np.append(impResp[:,tmpSize:], impResp[:,:tmpSize], axis=1)
 impResp = np.repeat([impResp,], numIR, axis=0)
 tmpIdx = np.arange(numChans)
 for cnt in np.arange(numIR):

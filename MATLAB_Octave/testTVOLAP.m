@@ -7,12 +7,10 @@
 
 clear; close all; clc
 
-set(0,'defaulttextinterpreter','latex');
-
 fs = 48000;
 timeDurAudio = 5;
 timeDurIR = 0.2;
-numChans = 4;
+numChans = 8;
 numChansWav = 2;
 numIR = 20;
 blockLen = 512;
@@ -23,29 +21,26 @@ deltaImp = fft(deltaImp);
 deltaImp = deltaImp(1:end/2+1);
 
 freqCuts = round(logspace(log10(0.01),log10(0.99),numChans+1)*size(deltaImp,1));
-weight = sqrt(freqCuts(2)/freqCuts(1)
+weight = sqrt(freqCuts(2)/freqCuts(1));
+hannWin = 0.5-0.5*cos(linspace(-pi, pi, size(impResp,1)))';
 for cnt = 1:numChans
     deltaImpCut = numChans*deltaImp./weight^(cnt-1);
     deltaImpCut(1:freqCuts(cnt)) = 0.0;
     deltaImpCut(freqCuts(cnt+1):end) = 0.0;
-    impResp(:,cnt) = real(ifft([deltaImpCut; conj(deltaImpCut(end-1:-1:2))]));
+    tmpVec = real(ifft([deltaImpCut; conj(deltaImpCut(end-1:-1:2))]));
+    impResp(:,cnt) = tmpVec.*hannWin;
 end
 
 tmpSize = size(impResp,1)/2;
 impResp = [impResp(tmpSize+1:end,:); impResp(1:tmpSize,:)];
 impResp = repmat(impResp, 1, 1, numIR);
 tmpIdx = 1:numChans;
-for cnt = 1:numIR;
+for cnt = 1:numIR
     impResp(:, :, cnt) = impResp(:, tmpIdx, cnt);
     tmpIdx = [tmpIdx(2:end), tmpIdx(1)];
 end
 
 inSig = randn(round(fs*timeDurAudio/blockLen)*blockLen, numChans)*0.1;
-specLen = size(inSig,1)/2+1;
-weight = repmat(sqrt(1./(1:specLen)*specLen)',1,numChans);
-inSig = fft(inSig);
-inSig = inSig(1:end/2+1,:).*weight;
-inSig = real(ifft([inSig; conj(inSig(end-1:-1:2,:))]));
 
 outSig = inSig;
 TVOLAPInst = TVOLAP(impResp, blockLen);
@@ -70,6 +65,8 @@ for chanCnt=1:numChans
 end
 disp(['filter(b,1,x) needed ' , num2str(toc*1000) , 'ms to process.']);
 
+outSig(outSig>0.9999) = 0.9999;
+outSig(outSig<-0.9999) = -0.9999;
 if numChans>1
     audiowrite('outTst.wav', outSig(:,1:numChansWav), fs)
 else
