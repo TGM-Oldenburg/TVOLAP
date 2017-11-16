@@ -25,8 +25,8 @@ Run CMake without any errors and build the library and test binary with your fav
 
 Tested development toolchains:
 
-- Windows 7, 8 and 10 with MinGW-w64-i686 (32Bit), MinGW-w64-x86_64 (64Bit) 6.3.0 compiler via Eclipse Neon, and MSVC (32+64Bit) compiler via Visual Studio 14.
-- Linux Ubuntu 16.04, Debian 8.7 with GCC via Eclipse Neon
+- Windows 7, 8 and 10 with MinGW-w64-i686 (32Bit), MinGW-w64-x86_64 (64Bit) 6.3.0 compiler via Eclipse Neon and QtCreator, MSVC (32+64Bit) compiler via Visual Studio 14.
+- Linux Ubuntu 16.04, Debian 8.7 with GCC via Eclipse Neon and QtCreator.
 
 on x86-32 (Win32) and x86-64 processor architecture.
 
