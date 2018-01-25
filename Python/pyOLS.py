@@ -59,7 +59,7 @@ class OLS():
            
         
 #--------------------Licence ---------------------------------------------
-# Copyright (c) 2012-2017 Hagen Jaeger                           
+# Copyright (c) 2012-2018 Hagen Jaeger                           
 #
 # Permission is hereby granted, free of charge, to any person obtaining a 
 # copy of this software and associated documentation files (the "Software"), 

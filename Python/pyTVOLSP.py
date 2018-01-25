@@ -10,7 +10,7 @@
 
 import numpy as np
 
-class TVOLAP():
+class TVOLSP():
     
     def __init__(self, impulseResponse, blockLength):
         
@@ -44,10 +44,10 @@ class TVOLAP():
         impulseResponse = np.append(impulseResponse, np.zeros([np.size(impulseResponse[:,0,0]), 
                        np.size(impulseResponse[0,:,0]), numSampsIR-np.size(impulseResponse[0,0,:])]),axis = 2)
 
-        self.convMem = np.zeros([2,self.numChans,self.processLen])
         self.outDataMem = np.zeros([self.numChans, self.blockLen])
 
         self.win = 0.5+0.5*np.cos(np.linspace(-np.pi,np.pi,self.processLen+1))[:-1]
+        self.win = self.win = np.append(self.win, self.win, axis=0)
         
         self.freqIR = np.zeros([self.numIR, self.numParts, self.numChans, self.processLen+1]).astype(np.complex)
         for cntIR in np.arange(self.numIR):
@@ -64,13 +64,14 @@ class TVOLAP():
         self.freqSaveCnt = 0
         self.modCnt = 0
         self.outDataMem = np.zeros([self.numChans, self.blockLen])
-        self.dataPre = np.zeros([self.numChans, self.blockLen])
+        self.inDataProcess = np.zeros([self.numChans, self.nfft])
         self.IR_ID = 0
         
     def process(self, data):
-        inDataProcess = np.append(self.dataPre,data, axis=1)*self.win
-        self.dataPre = np.copy(data)
-        self.freqMem[self.freqSaveCnt,:,:] = np.fft.rfft(inDataProcess, self.nfft)
+        threeFourthsIdx = self.processLen+self.blockLen
+        self.inDataProcess[:,:threeFourthsIdx] = self.inDataProcess[:,self.blockLen:]
+        self.inDataProcess[:,-self.blockLen:] = data
+        self.freqMem[self.freqSaveCnt,:,:] = np.fft.rfft(self.inDataProcess*self.win, self.nfft, axis=1)
 
         freqSum = np.copy(self.freqSumReset)
         
@@ -82,17 +83,13 @@ class TVOLAP():
                 freqReadCnt += self.numFreqMems
 
         tmpVec = np.fft.irfft(freqSum, self.nfft)
-        outDataProcess = tmpVec[:,:self.processLen]+self.convMem[self.modCnt,:,:]
-        self.convMem[self.modCnt,:,:] = np.copy(tmpVec[:,self.processLen:])
+        outDataProcess = tmpVec[:,self.processLen:]
 
         data = outDataProcess[:,:self.blockLen]+self.outDataMem
         self.outDataMem = np.copy(outDataProcess[:,self.blockLen:])
 
-        self.modCnt += 1
         self.freqSaveCnt += 1
         
-        if self.modCnt>=2:
-            self.modCnt = 0 
         if self.freqSaveCnt>=self.numFreqMems:
             self.freqSaveCnt = 0
             
@@ -106,7 +103,7 @@ class TVOLAP():
                raise ValueError('requested impulse response ID is out of range.')
         
 #--------------------Licence ---------------------------------------------
-# Copyright (c) 2012-2018 Hagen Jaeger                           
+# Copyright (c) 2012-2017 Hagen Jaeger                           
 #
 # Permission is hereby granted, free of charge, to any person obtaining a 
 # copy of this software and associated documentation files (the "Software"), 

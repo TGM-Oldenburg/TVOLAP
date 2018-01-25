@@ -9,7 +9,6 @@
 #--------------------------------------------------------------------------
 
 import numpy as np
-import matplotlib.pyplot as plt
 
 class WOLA():
     
@@ -33,7 +32,6 @@ class WOLA():
         self.IR_ID = 0
 
         self.convMem = np.zeros([2,self.numChans,self.blockLen])
-        self.convMemCnt = 0
         
         self.inDataProcess = np.zeros([self.numChans, self.blockLen])
         self.outMem = np.zeros([self.numChans, self.hopSize])
@@ -80,7 +78,7 @@ class WOLA():
            
         
 #--------------------Licence ---------------------------------------------
-# Copyright (c) 2012-2017 Hagen Jaeger                           
+# Copyright (c) 2012-2018 Hagen Jaeger                           
 #
 # Permission is hereby granted, free of charge, to any person obtaining a 
 # copy of this software and associated documentation files (the "Software"), 

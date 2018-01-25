@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Real time transfer function processing with weighted overlap add method
+# Real time transfer function processing with weighted overlap save method
 # implementation of the partitioned convolution in frequency domain 
 # (to prevent from perceptive noticeable audio artifacts).                                 
 #                                                                             
@@ -10,9 +10,9 @@
 
 import numpy as np
 
-class WOLA():
+class WOLS():
     
-    def __init__(self, impulseResponse):
+    def __init__(self, impulseResponse, synthWin=False):
         
         if not isinstance(impulseResponse, np.ndarray):
             impulseResponse = np.array(impulseResponse)
@@ -23,6 +23,7 @@ class WOLA():
         self.numIR = np.size(impulseResponse, 0)
         self.numChans = np.size(impulseResponse, 1)
         self.blockLen = np.size(impulseResponse, 2)
+        self.hopSize = int(self.blockLen/2)
         
         if self.numChans > self.blockLen:
             raise ValueError('channels > samples per IR. Bad formatted matrix.')
@@ -31,32 +32,38 @@ class WOLA():
         self.IR_ID = 0
         
         self.inDataProcess = np.zeros([self.numChans, self.nfft])
-
-        self.convMem = np.zeros([2,self.numChans,self.blockLen])
-        self.convMemCnt = 0
+        self.outMem = np.zeros([self.numChans, self.hopSize])
         
         self.freqIR = np.fft.rfft(impulseResponse, n=self.nfft, axis=2)
-        self.hannWin = 0.5+0.5*np.cos(np.linspace(-np.pi,np.pi,self.blockLen+1))[:-1]
-        self.rootHannWin = np.sqrt(self.hannWin)
         
-    def processRectHann(self, data):
-        freqIn = np.fft.rfft(data, n=self.nfft, axis=1)
-        tmpOut = np.fft.irfft(freqIn*self.freqIR[self.IR_ID,:,:], n=self.nfft, axis=1)
-        outSig = (tmpOut[:,:self.blockLen]+self.convMem[self.convMemCnt,:,:])*self.hannWin
-        self.convMem[self.convMemCnt,:,:] = tmpOut[:,self.blockLen:]
-        self.convMemCnt += 1
-        if self.convMemCnt>1:
-            self.convMemCnt=0
-        return outSig
+        self.win = 0.5+0.5*np.cos(np.linspace(-np.pi,np.pi,self.blockLen+1))[:-1]
+        self.win = np.append(self.win, self.win, axis=0)
+        self.synthWin = synthWin
+        if synthWin:
+            self.win = np.sqrt(self.win)
     
-    def processSrHannSrHann(self, data):
-        freqIn = np.fft.rfft(data*self.rootHannWin, n=self.nfft, axis=1)
+    def process(self, data):
+        threeFourthsIdx = self.blockLen+self.hopSize
+        self.inDataProcess[:,:threeFourthsIdx] = self.inDataProcess[:,self.hopSize:]
+        self.inDataProcess[:,-self.hopSize:] = data[:,:self.hopSize]
+        freqIn = np.fft.rfft(self.inDataProcess*self.win, n=self.nfft, axis=1)
         tmpOut = np.fft.irfft(freqIn*self.freqIR[self.IR_ID,:,:], n=self.nfft, axis=1)
-        outSig = (tmpOut[:,:self.blockLen]+self.convMem[self.convMemCnt,:,:])*self.rootHannWin
-        self.convMem[self.convMemCnt,:,:] = tmpOut[:,self.blockLen:]
-        self.convMemCnt += 1
-        if self.convMemCnt>1:
-            self.convMemCnt=0
+        outSig = tmpOut[:,self.blockLen:]
+        if self.synthWin:
+            outSig *= self.win
+        
+        self.inDataProcess[:,:threeFourthsIdx] = self.inDataProcess[:,self.hopSize:]
+        self.inDataProcess[:,-self.hopSize:] = data[:,self.hopSize:]
+        freqIn = np.fft.rfft(self.inDataProcess*self.win, n=self.nfft, axis=1)
+        tmpOut = np.fft.irfft(freqIn*self.freqIR[self.IR_ID,:,:], n=self.nfft, axis=1)
+        outSigTmp = tmpOut[:,self.blockLen:]
+        if self.synthWin:
+            outSigTmp *= self.win
+        
+        outSig[:,:self.hopSize] += self.outMem
+        outSig[:,self.hopSize:] += outSigTmp[:,:self.hopSize]
+        self.outMem = outSigTmp[:,self.hopSize:]
+
         return outSig
         
         
@@ -69,7 +76,7 @@ class WOLA():
            
         
 #--------------------Licence ---------------------------------------------
-# Copyright (c) 2012-2017 Hagen Jaeger                           
+# Copyright (c) 2012-2018 Hagen Jaeger                           
 #
 # Permission is hereby granted, free of charge, to any person obtaining a 
 # copy of this software and associated documentation files (the "Software"), 

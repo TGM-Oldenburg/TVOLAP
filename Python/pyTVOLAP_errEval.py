@@ -10,9 +10,6 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from pyOLA import OLA
-from pyOLS import OLS
-from pyWOLA import WOLA
 from pyTVOLAP import TVOLAP
 import time
 def loadKemarHRIR():
@@ -57,86 +54,6 @@ if __name__ == '__main__':
     for chanCnt in np.arange(numChans):
         outSig90[chanCnt,:] = np.convolve(inSig[chanCnt,:], IR[1,chanCnt,:])[:numSampsPerChan]
         
-    ### calculate outputs via standard Overlap Add ###
-    
-    blockLen = 2**(int(np.log2(lenIR-1))+1)
-    numBlocks = numSampsPerChan/blockLen
-    numBlocksTillSwitch = 16
-    
-    OLAinst = OLA(IR)
-    outSigOLA = np.copy(inSig)
-    actIR = 0
-    start_time = time.time()
-    for blockCnt in np.arange(numBlocks):
-        tmpIdxLo = blockCnt*blockLen
-        tmpIdxHi = tmpIdxLo+blockLen
-        outSigOLA[:,tmpIdxLo:tmpIdxHi] = OLAinst.process(inSig[:,tmpIdxLo:tmpIdxHi])
-        if blockCnt%numBlocksTillSwitch == numBlocksTillSwitch-1:
-            actIR = (actIR+1)%numIR
-            OLAinst.setImpResp(actIR)
-    print(str(time.time() - start_time)+ ' seconds for OLA')
-            
-    ### calculate outputs via standard Overlap Save ###
-    
-    blockLen = 2**(int(np.log2(lenIR-1))+1)
-    numBlocks = numSampsPerChan/blockLen
-    numBlocksTillSwitch = 16
-    
-    OLSinst = OLS(IR)
-    outSigOLS = np.copy(inSig)
-    actIR = 0
-    start_time = time.time()
-    for blockCnt in np.arange(numBlocks):
-        tmpIdxLo = blockCnt*blockLen
-        tmpIdxHi = tmpIdxLo+blockLen
-        outSigOLS[:,tmpIdxLo:tmpIdxHi] = OLSinst.process(inSig[:,tmpIdxLo:tmpIdxHi])
-        if blockCnt%numBlocksTillSwitch == numBlocksTillSwitch-1:
-            actIR = (actIR+1)%numIR
-            OLSinst.setImpResp(actIR)
-    print(str(time.time() - start_time)+ ' seconds for OLS')
-    
-    ### calculate outputs via standard weighted overlap add RH ###
-    
-    blockLen = 2**(int(np.log2(lenIR-1))+1)
-    numBlocks = numSampsPerChan/blockLen
-    numBlocksTillSwitch = 16
-    
-    WOLAinst = WOLA(IR, False)
-    outSigWOLA_RH = np.copy(inSig)
-    actIR = 0
-    start_time = time.time()
-    for blockCnt in np.arange(numBlocks-1):
-        tmpIdxLo = blockCnt*blockLen
-        tmpIdxHi = tmpIdxLo+blockLen
-        outSigWOLA_RH[:,tmpIdxLo:tmpIdxHi] = WOLAinst.process(inSig[:,tmpIdxLo:tmpIdxHi])
-        if blockCnt%numBlocksTillSwitch == numBlocksTillSwitch-1:
-            actIR = (actIR+1)%numIR
-            WOLAinst.setImpResp(actIR)
-    print(str(time.time() - start_time)+ ' seconds for WOLA RH')
-    sampsDelay = int(blockLen/4)
-    outSigWOLA_RH = np.append(outSigWOLA_RH[:,sampsDelay:], np.zeros([numChans, sampsDelay]), axis=1)
-    
-    ### calculate outputs via standard weighted overlap add SHSH ###
-    
-    blockLen = 2**(int(np.log2(lenIR-1))+1)
-    numBlocks = numSampsPerChan/blockLen
-    numBlocksTillSwitch = 16
-    
-    WOLAinst = WOLA(IR, True)
-    outSigWOLA_SHSH = np.copy(inSig)
-    actIR = 0
-    start_time = time.time()
-    for blockCnt in np.arange(numBlocks-1):
-        tmpIdxLo = blockCnt*blockLen
-        tmpIdxHi = tmpIdxLo+blockLen
-        outSigWOLA_SHSH[:,tmpIdxLo:tmpIdxHi] = WOLAinst.process(inSig[:,tmpIdxLo:tmpIdxHi])
-        if blockCnt%numBlocksTillSwitch == numBlocksTillSwitch-1:
-            actIR = (actIR+1)%numIR
-            WOLAinst.setImpResp(actIR)
-    print(str(time.time() - start_time)+ ' seconds for WOLA SHSH')
-    sampsDelay = int(blockLen/4)
-    outSigWOLA_SHSH = np.append(outSigWOLA_SHSH[:,sampsDelay:], np.zeros([numChans, sampsDelay]), axis=1)
-    
     ### calculate output via TVOLAP procedure to compare it ###
     
     blockLen = 256
