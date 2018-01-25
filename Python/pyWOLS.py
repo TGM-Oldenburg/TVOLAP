@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Real time transfer function processing with overlap add method
+# Real time transfer function processing with weighted overlap add method
 # implementation of the partitioned convolution in frequency domain 
 # (to prevent from perceptive noticeable audio artifacts).                                 
 #                                                                             
@@ -10,7 +10,7 @@
 
 import numpy as np
 
-class OLA():
+class WOLA():
     
     def __init__(self, impulseResponse):
         
@@ -29,17 +29,34 @@ class OLA():
 
         self.nfft = int(2*self.blockLen)
         self.IR_ID = 0
+        
+        self.inDataProcess = np.zeros([self.numChans, self.nfft])
 
-        self.convMem = np.zeros([self.numChans,self.blockLen])
+        self.convMem = np.zeros([2,self.numChans,self.blockLen])
+        self.convMemCnt = 0
         
         self.freqIR = np.fft.rfft(impulseResponse, n=self.nfft, axis=2)
-    
+        self.hannWin = 0.5+0.5*np.cos(np.linspace(-np.pi,np.pi,self.blockLen+1))[:-1]
+        self.rootHannWin = np.sqrt(self.hannWin)
         
-    def process(self, data):
+    def processRectHann(self, data):
         freqIn = np.fft.rfft(data, n=self.nfft, axis=1)
         tmpOut = np.fft.irfft(freqIn*self.freqIR[self.IR_ID,:,:], n=self.nfft, axis=1)
-        outSig = tmpOut[:,:self.blockLen]+self.convMem
-        self.convMem = tmpOut[:,self.blockLen:]
+        outSig = (tmpOut[:,:self.blockLen]+self.convMem[self.convMemCnt,:,:])*self.hannWin
+        self.convMem[self.convMemCnt,:,:] = tmpOut[:,self.blockLen:]
+        self.convMemCnt += 1
+        if self.convMemCnt>1:
+            self.convMemCnt=0
+        return outSig
+    
+    def processSrHannSrHann(self, data):
+        freqIn = np.fft.rfft(data*self.rootHannWin, n=self.nfft, axis=1)
+        tmpOut = np.fft.irfft(freqIn*self.freqIR[self.IR_ID,:,:], n=self.nfft, axis=1)
+        outSig = (tmpOut[:,:self.blockLen]+self.convMem[self.convMemCnt,:,:])*self.rootHannWin
+        self.convMem[self.convMemCnt,:,:] = tmpOut[:,self.blockLen:]
+        self.convMemCnt += 1
+        if self.convMemCnt>1:
+            self.convMemCnt=0
         return outSig
         
         

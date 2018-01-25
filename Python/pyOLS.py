@@ -12,50 +12,41 @@ import numpy as np
 
 class OLS():
     
-    def __init__(self, impulseResponse, blockLength):
+    def __init__(self, impulseResponse):
         
         if not isinstance(impulseResponse, np.ndarray):
             impulseResponse = np.array(impulseResponse)
             
-        if not isinstance(blockLength, int):
-            blockLength = int(blockLength)
-            
         if impulseResponse.ndim != 3:
             raise ValueError('ImpulseResponse response is not a 3dim matrix.')
             
-        if np.size(impulseResponse[0,:,0]) > np.size(impulseResponse[0,0,:]):
-            raise ValueError('channels > samples per IR. Bad formatted matrix.')
-
-        if blockLength != int(2**np.round(np.log2(blockLength))):
-            raise ValueError('blockLength has to be a power of two (2^n).')
-            
-        if blockLength < 32:
-            raise ValueError('blockLength has to be greather than 32.')
-            
-        self.blockLen = blockLength
         self.numIR = np.size(impulseResponse, 0)
         self.numChans = np.size(impulseResponse, 1)
-        self.lenIR = np.size(impulseResponse, 2)
-        self.nfft = int(2*self.lenIR)
+        self.blockLen = np.size(impulseResponse, 2)
+        
+        if self.numChans > self.blockLen:
+            raise ValueError('channels > samples per IR. Bad formatted matrix.')
+
+        self.nfft = int(2*self.blockLen)
         self.IR_ID = 0
 
         self.inDataProcess = np.zeros([self.numChans, self.nfft])
         
         self.freqIR = np.fft.rfft(impulseResponse, n=self.nfft, axis=2)
-        self.readPosBeg = self.nfft-self.blockLen
-        self.readPosEnd = self.nfft
-        self.readPosLim = self.nfft/2-self.blockLen/2
+        
+        self.blockLenHalf = int(self.blockLen/2)
+        self.firstBlock = True
     
         
     def process(self, data):
-        self.inDataProcess[:,:-self.blockLen:] = self.inDataProcess[:,self.blockLen:]
-        self.inDataProcess[:,-self.blockLen:] = data
+        self.inDataProcess[:,:self.blockLen] = self.inDataProcess[:,self.blockLen:]
+        self.inDataProcess[:,self.blockLen:] = data
         freqIn = np.fft.rfft(self.inDataProcess, n=self.nfft, axis=1)
         tmpOut = np.fft.irfft(freqIn*self.freqIR[self.IR_ID,:,:], n=self.nfft, axis=1)
-        outSig = tmpOut[:,self.readPosBeg:self.readPosEnd]
-        if self.readPosBeg<self.readPosLim:
-            self.readPosBeg -= self.blockLen/2
-            self.readPosEnd = self.readPosBeg+self.blockLen
+        if self.firstBlock:
+            outSig = tmpOut[:,self.blockLen:]
+        else:
+            outSig = tmpOut[:,self.blockLenHalf:self.blockLenHalf+self.blockLen]
         return outSig
         
         
