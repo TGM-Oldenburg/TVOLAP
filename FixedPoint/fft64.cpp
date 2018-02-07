@@ -521,10 +521,12 @@ void icfft64(complex64 *x, int scale, int nfft)
         x[i].im = -x[i].im;
 }
 
-//--------------------- Licence -----------------------------------------------
-// Copyright (c) <2011-2012> Wiebke Lamping, Simon Becker, Moritz Wächtler, 
-// Ben Williges, Uwe Simmer, Institute for Hearing Technology and Audiology 
-// Jade University of Applied Sciences Oldenburg 
+//--------------------- License -----------------------------------------------
+
+// Copyright (c) 2011-2012 Wiebke Lamping, Simon Becker, Moritz Wächtler,
+// Ben Williges, Uwe Simmer, Institute for Hearing Technology and Audiology,
+// Jade University of Applied Sciences Oldenburg.
+
 // Permission is hereby granted, free of charge, to any person obtaining 
 // a copy of this software and associated documentation files 
 // (the "Software"), to deal in the Software without restriction, including 

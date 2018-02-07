@@ -56,8 +56,8 @@ classdef TVOLAP < handle
             
             obj.numParts = ceil(size(impResp,1)/obj.processLen);
             obj.numFreqMems = 2*obj.numParts;
-            numSampsIR = obj.numParts*obj.processLen;
-            impResp(end:numSampsIR,:,:) = 0;
+            % numSampsIR = obj.numParts*obj.processLen;
+            % impResp(end:numSampsIR,:,:) = 0;
 
             obj.convMem = zeros(obj.processLen,obj.numChans,2);
             obj.outDataMem = zeros(obj.blockLen,obj.numChans);
