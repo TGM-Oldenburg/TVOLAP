@@ -52,7 +52,7 @@ if __name__ == '__main__':
     ### calculate outputs via standard Overlap Add ###
     
     blockLen = 2**(int(np.log2(lenIR-1))+1)
-    numBlocks = numSampsPerChan/blockLen
+    numBlocks = int(numSampsPerChan/blockLen-1)
     numBlocksTillSwitch = 16
     
     OLAinst = OLA(IR)
@@ -60,7 +60,7 @@ if __name__ == '__main__':
     actIR = 0
     start_time = time.time()
     for blockCnt in np.arange(numBlocks):
-        tmpIdxLo = blockCnt*blockLen
+        tmpIdxLo = int(blockCnt*blockLen)
         tmpIdxHi = tmpIdxLo+blockLen
         outSigOLA[:,tmpIdxLo:tmpIdxHi] = OLAinst.process(inSig[:,tmpIdxLo:tmpIdxHi])
         if blockCnt%numBlocksTillSwitch == numBlocksTillSwitch-1:
@@ -71,7 +71,7 @@ if __name__ == '__main__':
     ### calculate outputs via standard Overlap Save ###
     
     blockLen = 2**(int(np.log2(lenIR-1))+1)
-    numBlocks = numSampsPerChan/blockLen
+    numBlocks = int(numSampsPerChan/blockLen-1)
     numBlocksTillSwitch = 16
     
     OLSinst = OLS(IR)
@@ -79,7 +79,7 @@ if __name__ == '__main__':
     actIR = 0
     start_time = time.time()
     for blockCnt in np.arange(numBlocks):
-        tmpIdxLo = blockCnt*blockLen
+        tmpIdxLo = int(blockCnt*blockLen)
         tmpIdxHi = tmpIdxLo+blockLen
         outSigOLS[:,tmpIdxLo:tmpIdxHi] = OLSinst.process(inSig[:,tmpIdxLo:tmpIdxHi])
         if blockCnt%numBlocksTillSwitch == numBlocksTillSwitch-1:
@@ -90,7 +90,7 @@ if __name__ == '__main__':
     ### calculate outputs via standard weighted overlap add RH ###
     
     blockLen = 2**(int(np.log2(lenIR-1))+1)
-    numBlocks = numSampsPerChan/blockLen
+    numBlocks = int(numSampsPerChan/blockLen-1)
     numBlocksTillSwitch = 16
     
     WOLAinst = WOLA(IR, False)
@@ -98,7 +98,7 @@ if __name__ == '__main__':
     actIR = 0
     start_time = time.time()
     for blockCnt in np.arange(numBlocks-1):
-        tmpIdxLo = blockCnt*blockLen
+        tmpIdxLo = int(blockCnt*blockLen)
         tmpIdxHi = tmpIdxLo+blockLen
         outSigWOLA_RH[:,tmpIdxLo:tmpIdxHi] = WOLAinst.process(inSig[:,tmpIdxLo:tmpIdxHi])
         if blockCnt%numBlocksTillSwitch == numBlocksTillSwitch-1:
@@ -108,31 +108,10 @@ if __name__ == '__main__':
     sampsDelay = int(blockLen/4)
     outSigWOLA_RH = np.append(outSigWOLA_RH[:,sampsDelay:], np.zeros([numChans, sampsDelay]), axis=1)
     
-    ### calculate outputs via standard weighted overlap add SHSH ###
-    
-    blockLen = 2**(int(np.log2(lenIR-1))+1)
-    numBlocks = numSampsPerChan/blockLen
-    numBlocksTillSwitch = 16
-    
-    WOLAinst = WOLA(IR, True)
-    outSigWOLA_SHSH = np.copy(inSig)
-    actIR = 0
-    start_time = time.time()
-    for blockCnt in np.arange(numBlocks-1):
-        tmpIdxLo = blockCnt*blockLen
-        tmpIdxHi = tmpIdxLo+blockLen
-        outSigWOLA_SHSH[:,tmpIdxLo:tmpIdxHi] = WOLAinst.process(inSig[:,tmpIdxLo:tmpIdxHi])
-        if blockCnt%numBlocksTillSwitch == numBlocksTillSwitch-1:
-            actIR = (actIR+1)%numIR
-            WOLAinst.setImpResp(actIR)
-    print(str(time.time() - start_time)+ ' seconds for WOLA SHSH')
-    sampsDelay = int(blockLen/4)
-    outSigWOLA_SHSH = np.append(outSigWOLA_SHSH[:,sampsDelay:], np.zeros([numChans, sampsDelay]), axis=1)
-    
     ### calculate output via TVOLAP procedure to compare it ###
     
     blockLen = 256
-    numBlocks = numSampsPerChan/blockLen
+    numBlocks = int(numSampsPerChan/blockLen-1)
     numBlocksTillSwitch = 128
     
     TVOLAPinst = TVOLAP(IR, blockLen)
@@ -140,14 +119,14 @@ if __name__ == '__main__':
     actIR = 0
     start_time = time.time()
     for blockCnt in np.arange(numBlocks):
-        tmpIdxLo = blockCnt*blockLen
+        tmpIdxLo = int(blockCnt*blockLen)
         tmpIdxHi = tmpIdxLo+blockLen
         outSigTVOLAP[:,tmpIdxLo:tmpIdxHi] = TVOLAPinst.process(inSig[:,tmpIdxLo:tmpIdxHi])
         if blockCnt%numBlocksTillSwitch == numBlocksTillSwitch-1:
             actIR = (actIR+1)%numIR
             TVOLAPinst.setImpResp(actIR)
     print(str(time.time() - start_time)+ ' seconds for TVOLAP')
-    sampsDelay = blockLen/2
+    sampsDelay = int(blockLen/2)
     outSigTVOLAP = np.append(outSigTVOLAP[:,sampsDelay:], np.zeros([numChans, sampsDelay]), axis=1)
     
     ### plot results ###

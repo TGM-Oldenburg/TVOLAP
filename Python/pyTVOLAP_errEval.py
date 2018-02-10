@@ -57,7 +57,7 @@ if __name__ == '__main__':
     ### calculate output via TVOLAP procedure to compare it ###
     
     blockLen = 256
-    numBlocks = numSampsPerChan/blockLen
+    numBlocks = int(numSampsPerChan/blockLen-1)
     numBlocksTillSwitch = 128
     
     TVOLAPinst = TVOLAP(IR, blockLen)
@@ -65,7 +65,7 @@ if __name__ == '__main__':
     actIR = 0
     start_time = time.time()
     for blockCnt in np.arange(numBlocks):
-        tmpIdxLo = blockCnt*blockLen
+        tmpIdxLo = int(blockCnt*blockLen)
         tmpIdxHi = tmpIdxLo+blockLen
         outSigTVOLAP[:,tmpIdxLo:tmpIdxHi] = TVOLAPinst.process(inSig[:,tmpIdxLo:tmpIdxHi])
         if blockCnt%numBlocksTillSwitch == numBlocksTillSwitch-1:
