@@ -40,7 +40,7 @@ if __name__ == '__main__':
     
     ### generate sine wave as input signal ###
     
-    inSig = np.random.randn(numChans, numSampsPerChan)*25
+    inSig = np.random.randn(numChans, numSampsPerChan)*30
     weight = np.sqrt(1.0/(np.arange(numSampsPerChan/2+1)+1))
     inSig = np.fft.irfft(np.fft.rfft(inSig, axis=1)*weight, axis=1)
         
@@ -104,20 +104,27 @@ if __name__ == '__main__':
     plotSampWidth = 1024
     widthHalf = int(plotSampWidth/2)
     xAx = np.arange(plotSampWidth).astype(float)/fs*1000
+    xTicks = np.arange(0, plotSampWidth*1000/fs, 5)
     xLo = -1.1
     xHi = -xLo
     plt.figure(figsize=(4.1, 4))
-    plt.subplot(2,1,1)
+    plt.subplot(3,1,1)
     plt.plot(xAx, outSigConv.T[32768-widthHalf:32768+widthHalf,:])
     plt.grid(True); plt.xlim([xAx[0], xAx[-1]]); plt.ylim([xLo, xHi])
-    plt.subplot(2,1,2)
+    plt.xticks(xTicks, ['' for i in xTicks])
+    plt.ylabel(r'Ampl. $A_1$', fontsize=12, fontname='cmr10')
+    plt.subplot(3,1,2)
+    plt.plot(xAx, outSigTVOLAP.T[32768-widthHalf:32768+widthHalf,:])
+    plt.grid(True); plt.xlim([xAx[0], xAx[-1]]); plt.ylim([xLo, xHi])
+    plt.xticks(xTicks, ['' for i in xTicks])
+    plt.ylabel(r'Ampl. $A_2$', fontsize=12, fontname='cmr10')
+    plt.subplot(3,1,3)
     tmp = outSigTVOLAP.T[32768-widthHalf:32768+widthHalf,:]-outSigConv.T[32768-widthHalf:32768+widthHalf,:]
     plt.plot(xAx, np.sqrt(tmp**2))
-    plt.grid(True); plt.xlim([xAx[0], xAx[-1]]); plt.ylim([0, 1.05]);
+    plt.grid(True); plt.xlim([xAx[0], xAx[-1]]); plt.ylim([0, 0.105]);
     plt.xlabel('Time t [ms]', fontsize=12, fontname='cmr10')
-    plt.ylabel('Amplitude A [NV]', fontsize=12, fontname='cmr10')
-    plt.tight_layout()
-    plt.ylabel(' '*37 + 'Amplitude A [NV]', fontsize=12, fontname='cmr10')
+    plt.ylabel(r'$|A_1-A_2|$', fontsize=12, fontname='cmr10')
+    plt.tight_layout(pad=0.5, w_pad=0.1, h_pad=0.8)
     
 #--------------------Licence ---------------------------------------------
 # Copyright (c) 2012-2018 Hagen Jaeger                           
