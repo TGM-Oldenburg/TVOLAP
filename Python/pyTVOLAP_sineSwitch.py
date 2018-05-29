@@ -130,33 +130,37 @@ if __name__ == '__main__':
     outSigTVOLAP = np.append(outSigTVOLAP[:,sampsDelay:], np.zeros([numChans, sampsDelay]), axis=1)
     
     ### plot results ###
-    
-    plotSampWidth = 600
+    plt.style.use('grayscale')
+    plotSampWidth = 800
     widthHalf = int(plotSampWidth/2)
     xAx = np.arange(plotSampWidth).astype(float)/fs*1000
-    xTicks = np.arange(0, plotSampWidth*1000/fs, 2)
+    xTicks = np.arange(0, plotSampWidth*1000/fs, 5)
     xLo = -0.9
     xHi = -xLo
     plt.figure(figsize=(4.1, 5))
     hsp1 = plt.subplot(4,1,1)
-    plt.plot(xAx, outSigOLA.T[32768-widthHalf:32768+widthHalf,:])
+    plotPoint = blockLen*numBlocksTillSwitch+256
+    plt.plot(xAx, outSigOLA.T[plotPoint-widthHalf:plotPoint+widthHalf,:])
     plt.grid(True); plt.xlim([xAx[0], xAx[-1]]); plt.ylim([xLo, xHi])
     plt.xticks(xTicks, ['' for i in xTicks])
     hsp2 = plt.subplot(4,1,2)
-    plt.plot(xAx, outSigOLS.T[32768-widthHalf:32768+widthHalf,:])
+    plotPoint = blockLen*numBlocksTillSwitch+256
+    plt.plot(xAx, outSigOLS.T[plotPoint-widthHalf:plotPoint+widthHalf,:])
     plt.grid(True); plt.xlim([xAx[0], xAx[-1]]); plt.ylim([xLo, xHi])
     plt.xticks(xTicks, ['' for i in xTicks])
     hsp3 = plt.subplot(4,1,3)
-    plt.plot(xAx, outSigWOLA_RH.T[32768-widthHalf:32768+widthHalf,:])
+    plotPoint = blockLen*numBlocksTillSwitch-56
+    plt.plot(xAx, outSigWOLA_RH.T[plotPoint-widthHalf:plotPoint+widthHalf,:])
     plt.grid(True); plt.xlim([xAx[0], xAx[-1]]); plt.ylim([xLo, xHi])
     plt.xticks(xTicks, ['' for i in xTicks])
     hsp4 = plt.subplot(4,1,4)
-    plt.plot(xAx, outSigTVOLAP.T[32768-widthHalf:32768+widthHalf,:])
+    plotPoint = blockLen*numBlocksTillSwitch+256-50
+    plt.plot(xAx, outSigTVOLAP.T[plotPoint-widthHalf:plotPoint+widthHalf,:])
     plt.grid(True); plt.xlim([xAx[0], xAx[-1]]); plt.ylim([xLo, xHi])
     plt.xlabel('Time t [ms]', fontsize=12, fontname='cmr10')
     plt.ylabel('Amplitude A [NV]', fontsize=12, fontname='cmr10')
     plt.tight_layout(pad=0.5, w_pad=0.1, h_pad=-1.0)
-    plt.ylabel(' '*70 + 'Amplitude A [NV]', fontsize=12, fontname='cmr10')
+    plt.ylabel(' '*62 + 'Amplitude A [NV]', fontsize=12, fontname='cmr10')
     
 #--------------------Licence ---------------------------------------------
 # Copyright (c) 2012-2018 Hagen Jaeger                           

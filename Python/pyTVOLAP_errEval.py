@@ -100,7 +100,7 @@ if __name__ == '__main__':
     outSigConv = outSig0*weight0+outSig90*weight90
     
     ### plot results ###
-    
+    plt.style.use('grayscale')
     plotSampWidth = 1024
     widthHalf = int(plotSampWidth/2)
     xAx = np.arange(plotSampWidth).astype(float)/fs*1000

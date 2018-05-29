@@ -96,22 +96,25 @@ if __name__ == '__main__':
     outSigTVOLAP = np.append(outSigTVOLAP[:,sampsDelay:], np.zeros([numChans, sampsDelay]), axis=1)
     
     ### plot results ###
-    
-    plotSampWidth = 1024
+    plt.style.use('grayscale')
+    plotSampWidth = 1024+256
     widthHalf = int(plotSampWidth/2)
     xAx = np.arange(plotSampWidth).astype(float)/fs*1000
-    xTicks = np.arange(0, plotSampWidth*1000/fs, plotSampWidth*1000/fs/4.001)
-    xLo = -1.1
-    xHi = -xLo
+    xTicks = np.arange(0, plotSampWidth*1000/fs, plotSampWidth*1000/fs/5.001)
+    yLo = -1.1
+    yHi = -yLo
     plt.figure(figsize=(4.1, 2.5))
-    plt.plot(xAx, outSigOLA.T[32768-widthHalf:32768+widthHalf,:])
-    plt.plot(xAx, outSigWOLA_RH.T[32768-widthHalf:32768+widthHalf,:])
-    plt.plot(xAx, outSigTVOLAP.T[32768-widthHalf:32768+widthHalf,:])
-    plt.grid(True); plt.xlim([xAx[0], xAx[-1]]); plt.ylim([xLo, xHi]);
+    plotPoint = numBlocksTillSwitch*blockLen+383
+    plt.plot(xAx, outSigOLA.T[plotPoint-widthHalf:plotPoint+widthHalf,:])
+    plotPoint = numBlocksTillSwitch*blockLen+256-383
+    plt.plot(xAx, outSigWOLA_RH.T[plotPoint-widthHalf:plotPoint+widthHalf,:])
+    plotPoint = numBlocksTillSwitch*blockLen+383-128
+    plt.plot(xAx, outSigTVOLAP.T[plotPoint-widthHalf:plotPoint+widthHalf,:])
+    plt.grid(True); plt.xlim([xAx[0], xAx[-1]]); plt.ylim([yLo, yHi]);
     plt.xlabel('Time t [ms]', fontsize=12, fontname='cmr10')
     plt.ylabel('Amplitude A [NV]', fontsize=12, fontname='cmr10')
-    plt.xticks(xTicks, [r'$0$', r'$\frac{L}{4 \cdot fs}$', r'$\frac{L}{2 \cdot fs}$', 
-                        r'$\frac{3 \cdot L}{4 \cdot fs}$', r'$L$'])
+    plt.xticks(xTicks, [r'$\frac{-N_{IR}}{8 \cdot fs}$', r'$0$', r'$\frac{N_{IR}}{8 \cdot fs}$', r'$\frac{N_{IR}}{4 \cdot fs}$', 
+                        r'$\frac{3 \cdot N_{IR}}{8 \cdot fs}$', r'$\frac{N_{IR}}{2 \cdot fs}$'])
     plt.tight_layout(pad=0.5, w_pad=0.1, h_pad=0.1)
     
 #--------------------Licence ---------------------------------------------
