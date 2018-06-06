@@ -1,12 +1,12 @@
 /*-----------------------------------------------------------------------------*\
-| Header of WOLAP32.cpp, for explanation and example see cpp-file.              |
+| Header of TVOLAP32.cpp, for explanation and example see cpp-file.             |
 |                                                                               |
 | Author: (c) Hagen Jaeger, Uwe Simmer               April 2016 - December 2017 |
 | LGPL Release: May 2017, License see end of file                               |
 \*-----------------------------------------------------------------------------*/
 
-#ifndef WOLAP32_H
-#define WOLAP32_H
+#ifndef TVOLAP32_H
+#define TVOLAP32_H
 
 #include <stdint.h>
 #include <vector>
@@ -16,12 +16,12 @@
 
 #define BLOCK_FLOATING_POINT 0
 
-class WOLAP32
+class TVOLAP32
 {
 
 public:
-    WOLAP32(std::vector<int32_t> &interleavedIR, uint32_t numIR, uint32_t lenIR, uint32_t numChansIR,
-            uint32_t blockLen, uint32_t numChansAudio);
+    TVOLAP32(std::vector<int32_t> &interleavedIR, uint32_t numIR, uint32_t lenIR, uint32_t numChansIR,
+             uint32_t blockLen, uint32_t numChansAudio);
 
     void process(int32_t *inBlockInterleaved);
 
@@ -50,7 +50,7 @@ private:
 #endif
 };
 
-#endif // WOLAP32_H
+#endif // TVOLAP32_H
 
 /*------------------------------License---------------------------------------*\
 | Copyright (c) 2012-2017 Hagen Jaeger, Uwe Simmer                             |

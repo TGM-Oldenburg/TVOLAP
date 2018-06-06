@@ -8,12 +8,12 @@
 \*-----------------------------------------------------------------------------*/
 
 #include <stdexcept>
-#include "WOLAP32.h"
+#include "TVOLAP32.h"
 
 #define M_PI 3.14159265358979323846
 
-WOLAP32::WOLAP32(std::vector<int32_t> &interleavedIR, uint32_t numIR, uint32_t lenIR, uint32_t numChansIR,
-                 uint32_t blockLen, uint32_t numChansAudio)
+TVOLAP32::TVOLAP32(std::vector<int32_t> &interleavedIR, uint32_t numIR, uint32_t lenIR, uint32_t numChansIR,
+                   uint32_t blockLen, uint32_t numChansAudio)
 {
     std::vector< std::vector< std::vector<int32_t> > > tmpIR;
     std::vector<int32_t> tmpPartIR;
@@ -129,7 +129,7 @@ WOLAP32::WOLAP32(std::vector<int32_t> &interleavedIR, uint32_t numIR, uint32_t l
     }
 }
 
-void WOLAP32::process(int32_t *inBlockInterleaved)
+void TVOLAP32::process(int32_t *inBlockInterleaved)
 {
     uint32_t chanCntAudio, iChanPosAudio, chanCntIR, partCnt, sampleCnt;
     int32_t freqReadCnt;
@@ -257,7 +257,7 @@ void WOLAP32::process(int32_t *inBlockInterleaved)
 
 #if (BLOCK_FLOATING_POINT)
 
-void WOLAP32::normalize(std::vector<complex32>& spectrum32, std::vector<complex16>& spectrum16, int numSpect)
+void TVOLAP32::normalize(std::vector<complex32>& spectrum32, std::vector<complex16>& spectrum16, int numSpect)
 {
     int i, n;
     int block_exp;
