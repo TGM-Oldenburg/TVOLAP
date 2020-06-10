@@ -41,7 +41,8 @@ int main()
     std::vector< std::vector< std::vector<double> > > testIR;
     std::vector<double> interleavedIR(numIR*numSampsIRPerChan*numChans, 0.0);
     std::vector<complex_float64> tmpFreq;
-    double mean, RMS;
+    double mean = 0;
+    double RMS = 0;
     srand(time(NULL));
 
     testIR.resize(numIR);
