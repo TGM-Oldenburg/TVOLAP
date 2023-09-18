@@ -2,10 +2,6 @@
 *.config
 *.cfg
 *.tmp
-*.wav
-*.mp3
-*.aiff
-*.flac
 *.pyc
 CMakeFiles
 RemoteSystemsTempFiles
