@@ -12,10 +12,10 @@ For the necessary BRIR files, please download the Salford-BBC Spatially-sampled 
 
 ## Audio files
 
-In this scene the position of the audio source is switched with 4 different techniques. 
+In this scene the position of the audio source is switched with four different techniques. 
 
 First OLA, with its switching artefacts:
-<audio src="/TVOLAP//assets/audio/cello_C3_phrase_cresc-decresc_arco-normal_OLA.wav" controls title="Cello processed by OLA"></audio>
+<audio src="/TVOLAP/assets/audio/cello_C3_phrase_cresc-decresc_arco-normal_OLA.wav" controls title="Cello processed by OLA"></audio>
 
 Second OLS, with its switching artefacts:
 <audio src="/TVOLAP/assets/audio/cello_C3_phrase_cresc-decresc_arco-normal_OLS.wav" controls title="Cello processed by OLS"></audio>
