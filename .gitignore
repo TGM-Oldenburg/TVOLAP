@@ -12,3 +12,4 @@ RemoteSystemsTempFiles
 .metadata
 __pycache__
 octave-workspace
+build/
